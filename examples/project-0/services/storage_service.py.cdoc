@@ -1,0 +1,129 @@
+{
+  "metadata": {
+    "filename": "storage_service.py",
+    "version": "1.0.0",
+    "lastUpdate": "2025-03-22"
+  },
+  "purpose": "Provides persistence for todo items using JSON file storage with safeguards against data corruption",
+  "dependencies": [
+    {
+      "name": "TodoItem",
+      "reason": "Domain model that needs to be serialized/deserialized",
+      "usage": "Converted to/from dictionaries for storage"
+    }
+  ],
+  "invariants": [
+    "File operations must be atomic to prevent data corruption",
+    "File reads must handle potentially corrupted data gracefully",
+    "The service must preserve a backup of corrupted files before overwriting them"
+  ],
+  "components": [
+    {
+      "name": "StorageService.__init__",
+      "signature": "__init__(file_path: str)",
+      "description": "Initializes the storage service with a path to the storage file",
+      "preconditions": [
+        "file_path must be a valid string path"
+      ],
+      "postconditions": [
+        "A StorageService instance is created with the specified file_path"
+      ]
+    },
+    {
+      "name": "StorageService.load",
+      "signature": "load() -> List[TodoItem]",
+      "description": "Loads todos from the storage file",
+      "preconditions": [],
+      "postconditions": [
+        "Returns a list of TodoItem objects deserialized from the storage file",
+        "Returns an empty list if the file doesn't exist or is corrupted"
+      ],
+      "algorithmNotes": "If the file is corrupted, it's backed up with a .bak extension before returning an empty list"
+    },
+    {
+      "name": "StorageService.save",
+      "signature": "save(todos: List[TodoItem]) -> None",
+      "description": "Saves todos to the storage file",
+      "preconditions": [
+        "todos must be a list of TodoItem objects"
+      ],
+      "postconditions": [
+        "The todos are serialized and saved to the storage file",
+        "The save operation is atomic to prevent data corruption"
+      ],
+      "algorithmNotes": "Uses a temporary file and atomic rename to ensure the save operation is safe"
+    }
+  ],
+  "testFixtures": [
+    {
+      "name": "empty_file",
+      "description": "An empty JSON array",
+      "data": "[]"
+    },
+    {
+      "name": "valid_file",
+      "description": "A valid JSON file with todo items",
+      "data": "[{\"id\": 1, \"title\": \"Test Todo\", \"is_completed\": false, \"created_at\": \"2025-03-22T10:00:00\", \"completed_at\": null}]"
+    },
+    {
+      "name": "corrupted_file",
+      "description": "A corrupted JSON file",
+      "data": "[{\"id\": 1, \"title\": \"Test Todo\", \"is_completed\": false, \"created_at\": \"2025-03-22T10:00:00\", \"completed_at\": null}"
+    }
+  ],
+  "conceptualTests": [
+    {
+      "name": "Data persistence",
+      "steps": [
+        {
+          "action": "Initialize StorageService with a new file path",
+          "expect": "StorageService instance is created"
+        },
+        {
+          "action": "Call load() on a non-existent file",
+          "expect": "Returns an empty list"
+        },
+        {
+          "action": "Create a list of TodoItems and call save()",
+          "expect": "File is created with serialized TodoItems"
+        },
+        {
+          "action": "Call load() again",
+          "expect": "Returns a list of TodoItems matching the ones saved"
+        }
+      ]
+    },
+    {
+      "name": "Error handling",
+      "steps": [
+        {
+          "action": "Create a corrupted JSON file",
+          "expect": "File exists but contains invalid JSON"
+        },
+        {
+          "action": "Initialize StorageService with the corrupted file path",
+          "expect": "StorageService instance is created"
+        },
+        {
+          "action": "Call load()",
+          "expect": "Returns an empty list and creates a backup of the corrupted file"
+        },
+        {
+          "action": "Check if a backup file exists",
+          "expect": "A file with the original name plus .bak extension exists"
+        }
+      ]
+    }
+  ],
+  "aiNotes": {
+    "generationTips": [
+      "When implementing file operations, always consider atomic operations to prevent data corruption",
+      "Handle exceptions gracefully and provide meaningful error messages",
+      "Consider implementing more robust error recovery mechanisms in production systems"
+    ],
+    "commonPatterns": [
+      "The service follows a Repository pattern for persistence",
+      "Uses the Write-to-temporary-file-and-rename pattern for atomic writes"
+    ]
+  }
+}

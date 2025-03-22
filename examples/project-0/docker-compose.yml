@@ -1,0 +1,8 @@
+services:
+  todo-app:
+    build: .
+    container_name: ConceptDoc-todo-app
+    volumes:
+      - ./data:/app/data
+    stdin_open: true
+    tty: true

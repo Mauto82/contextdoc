@@ -1,0 +1,155 @@
+{
+  "metadata": {
+    "filename": "todo_item.py",
+    "version": "1.0.0",
+    "lastUpdate": "2025-03-22"
+  },
+  "purpose": "Represents a to-do item with lifecycle management and serialization capabilities",
+  "dependencies": [],
+  "invariants": [
+    "A todo item always has a unique ID",
+    "A todo item always has a non-empty title",
+    "If is_completed is true, completed_at must contain a timestamp",
+    "If is_completed is false, completed_at must be None"
+  ],
+  "stateModel": {
+    "states": ["active", "completed"],
+    "initialState": "active",
+    "transitions": [
+      {
+        "from": "active",
+        "to": "completed",
+        "trigger": "complete()",
+        "conditions": []
+      },
+      {
+        "from": "completed",
+        "to": "active",
+        "trigger": "reactivate()",
+        "conditions": []
+      }
+    ]
+  },
+  "components": [
+    {
+      "name": "TodoItem.__init__",
+      "signature": "__init__(id: int, title: str, is_completed: bool = False, created_at: datetime = field(default_factory=datetime.now), completed_at: Optional[datetime] = None)",
+      "description": "Constructor for TodoItem",
+      "preconditions": [
+        "id must be a positive integer",
+        "title must be a non-empty string"
+      ],
+      "postconditions": [
+        "A new TodoItem instance is created with the given properties"
+      ]
+    },
+    {
+      "name": "TodoItem.complete",
+      "signature": "complete()",
+      "description": "Marks the todo item as completed",
+      "preconditions": [],
+      "postconditions": [
+        "is_completed is set to True",
+        "completed_at is set to the current datetime"
+      ]
+    },
+    {
+      "name": "TodoItem.reactivate",
+      "signature": "reactivate()",
+      "description": "Marks the todo item as active (not completed)",
+      "preconditions": [],
+      "postconditions": [
+        "is_completed is set to False",
+        "completed_at is set to None"
+      ]
+    },
+    {
+      "name": "TodoItem.to_dict",
+      "signature": "to_dict() -> dict",
+      "description": "Converts the TodoItem to a dictionary for serialization",
+      "preconditions": [],
+      "postconditions": [
+        "Returns a dictionary with all TodoItem properties",
+        "datetime objects are converted to ISO format strings"
+      ]
+    },
+    {
+      "name": "TodoItem.from_dict",
+      "signature": "from_dict(data: dict) -> TodoItem",
+      "description": "Creates a TodoItem from a dictionary",
+      "preconditions": [
+        "data must contain 'id', 'title', and 'is_completed' keys"
+      ],
+      "postconditions": [
+        "Returns a new TodoItem instance with properties from the dictionary",
+        "ISO format date strings are converted to datetime objects"
+      ]
+    }
+  ],
+  "testFixtures": [
+    {
+      "name": "active_todo",
+      "description": "A standard active todo item",
+      "data": {
+        "id": 1,
+        "title": "Buy groceries",
+        "is_completed": false,
+        "created_at": "2025-03-22T10:00:00",
+        "completed_at": null
+      }
+    },
+    {
+      "name": "completed_todo",
+      "description": "A completed todo item",
+      "data": {
+        "id": 2,
+        "title": "Call mom",
+        "is_completed": true,
+        "created_at": "2025-03-22T09:00:00",
+        "completed_at": "2025-03-22T11:30:00"
+      }
+    }
+  ],
+  "conceptualTests": [
+    {
+      "name": "Todo lifecycle",
+      "steps": [
+        {
+          "action": "Create a new TodoItem",
+          "expect": "Item is in 'active' state with is_completed=False"
+        },
+        {
+          "action": "Call complete()",
+          "expect": "Item transitions to 'completed' state with is_completed=True and completed_at set"
+        },
+        {
+          "action": "Call reactivate()",
+          "expect": "Item transitions back to 'active' state with is_completed=False and completed_at=None"
+        }
+      ]
+    },
+    {
+      "name": "Serialization roundtrip",
+      "steps": [
+        {
+          "action": "Create a TodoItem",
+          "expect": "Instance is created with expected properties"
+        },
+        {
+          "action": "Call to_dict()",
+          "expect": "Dictionary contains all TodoItem properties"
+        },
+        {
+          "action": "Call from_dict() with the result",
+          "expect": "New TodoItem instance with identical properties to the original"
+        }
+      ]
+    }
+  ],
+  "aiNotes": {
+    "generationTips": [
+      "When generating code that manipulates TodoItems, always maintain the state invariants",
+      "Remember that completed_at should only be set when the item is completed"
+    ]
+  }
+}

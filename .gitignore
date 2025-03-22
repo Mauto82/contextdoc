@@ -1,0 +1,26 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+.pytest_cache/
+.pip-pipelines.yml
+.pip
+.pipenv/
+
+.idea/
+.vscode/
+.DS_Store
+
+# Projects
+build/
+dist/
+*.log
+.env
+
+# Testing
+.coverage
+.pytest_cache/
