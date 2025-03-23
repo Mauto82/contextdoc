@@ -2,6 +2,12 @@
 
 This document defines the standard schema for ConceptDoc files (`.cdoc`), designed to provide structured and machine-readable documentation to improve collaboration between human developers and AI assistants.
 
+## Documentation Papers
+
+For a comprehensive introduction to ConceptDoc, please refer to these papers:
+- [ConceptDoc Paper (English)](https://mautoblog.com/docs/conceptdoc-en)
+- [ConceptDoc Paper (Italiano)](https://mautoblog.com/docs/conceptdoc-it)
+
 ## Basic Structure
 
 A ConceptDoc file is a JSON document with the following basic structure:
