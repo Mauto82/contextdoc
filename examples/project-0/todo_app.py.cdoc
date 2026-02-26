@@ -1,207 +1,56 @@
-{
-  "metadata": {
-    "filename": "todo_app.py",
-    "version": "1.0.0",
-    "lastUpdate": "2025-03-22"
-  },
-  "purpose": "Main application entry point that provides a command-line interface for the todo list management system",
-  "dependencies": [
-    {
-      "name": "StorageService",
-      "reason": "Provides persistence for todo items",
-      "usage": "Injected into TodoService during initialization"
-    },
-    {
-      "name": "TodoService",
-      "reason": "Provides business logic for todo management",
-      "usage": "Used for all todo operations from the CLI interface"
-    },
-    {
-      "name": "TodoItem",
-      "reason": "Domain model",
-      "usage": "Indirectly used through TodoService"
-    }
-  ],
-  "invariants": [
-    "The application must gracefully handle all user input errors",
-    "The application must persist changes after each operation",
-    "The application must maintain a consistent state between the UI and underlying services"
-  ],
-  "components": [
-    {
-      "name": "TodoApp.__init__",
-      "signature": "__init__(self, storage_path=\"todos.json\")",
-      "description": "Initializes the application with services",
-      "preconditions": [],
-      "postconditions": [
-        "A StorageService is created with the specified storage_path",
-        "A TodoService is created with the StorageService"
-      ]
-    },
-    {
-      "name": "TodoApp.run",
-      "signature": "run(self)",
-      "description": "Main application loop that processes user commands",
-      "preconditions": [],
-      "postconditions": [
-        "Application runs until the user exits"
-      ]
-    },
-    {
-      "name": "TodoApp._display_todos",
-      "signature": "_display_todos(self, status=None)",
-      "description": "Displays todo items, optionally filtered by status",
-      "preconditions": [],
-      "postconditions": [
-        "Todo items are displayed to the console"
-      ]
-    },
-    {
-      "name": "TodoApp._display_help",
-      "signature": "_display_help(self)",
-      "description": "Displays available commands",
-      "preconditions": [],
-      "postconditions": [
-        "Help information is displayed to the console"
-      ]
-    },
-    {
-      "name": "TodoApp._add_todo",
-      "signature": "_add_todo(self)",
-      "description": "Prompts for and adds a new todo",
-      "preconditions": [],
-      "postconditions": [
-        "A new todo is added if the user provides a valid title",
-        "An error message is displayed if validation fails"
-      ]
-    },
-    {
-      "name": "TodoApp._complete_todo",
-      "signature": "_complete_todo(self, id_str)",
-      "description": "Marks a todo as complete",
-      "preconditions": [
-        "id_str is a string that can be converted to an integer"
-      ],
-      "postconditions": [
-        "The todo with the specified ID is marked as complete if it exists",
-        "An error message is displayed if the ID is invalid or doesn't exist"
-      ]
-    },
-    {
-      "name": "TodoApp._delete_todo",
-      "signature": "_delete_todo(self, id_str)",
-      "description": "Deletes a todo",
-      "preconditions": [
-        "id_str is a string that can be converted to an integer"
-      ],
-      "postconditions": [
-        "The todo with the specified ID is deleted if it exists",
-        "An error message is displayed if the ID is invalid or doesn't exist"
-      ]
-    },
-    {
-      "name": "TodoApp._update_todo",
-      "signature": "_update_todo(self, id_str)",
-      "description": "Updates a todo's title",
-      "preconditions": [
-        "id_str is a string that can be converted to an integer"
-      ],
-      "postconditions": [
-        "The todo with the specified ID has its title updated if it exists and a valid title is provided",
-        "An error message is displayed if the ID is invalid, doesn't exist, or the title is invalid"
-      ]
-    }
-  ],
-  "conceptualTests": [
-    {
-      "name": "Application startup and shutdown",
-      "steps": [
-        {
-          "action": "Initialize TodoApp with default storage path",
-          "expect": "TodoApp instance is created with proper service dependencies"
-        },
-        {
-          "action": "Run the application",
-          "expect": "Todo items are displayed and the application waits for user input"
-        },
-        {
-          "action": "Enter 'exit' command",
-          "expect": "Application displays goodbye message and exits"
-        }
-      ]
-    },
-    {
-      "name": "Todo management workflow",
-      "steps": [
-        {
-          "action": "Initialize and run TodoApp",
-          "expect": "Application starts and displays empty todo list"
-        },
-        {
-          "action": "Enter 'add' command and provide title 'Test Todo'",
-          "expect": "New todo is created and displayed in the list"
-        },
-        {
-          "action": "Enter 'complete 1' command",
-          "expect": "Todo with ID 1 is marked as complete"
-        },
-        {
-          "action": "Enter 'filter completed' command",
-          "expect": "Only the completed todo is displayed"
-        },
-        {
-          "action": "Enter 'filter active' command",
-          "expect": "No todos are displayed (empty list message)"
-        },
-        {
-          "action": "Enter 'filter all' command",
-          "expect": "All todos are displayed"
-        },
-        {
-          "action": "Enter 'update 1' command and provide new title 'Updated Todo'",
-          "expect": "Todo with ID 1 has its title updated"
-        },
-        {
-          "action": "Enter 'delete 1' command",
-          "expect": "Todo with ID 1 is deleted and no longer appears in the list"
-        }
-      ]
-    },
-    {
-      "name": "Error handling",
-      "steps": [
-        {
-          "action": "Initialize and run TodoApp",
-          "expect": "Application starts"
-        },
-        {
-          "action": "Enter 'complete xyz' command (invalid ID)",
-          "expect": "Application displays 'Invalid ID format' error message"
-        },
-        {
-          "action": "Enter 'complete 999' command (non-existent ID)",
-          "expect": "Application displays 'No todo found with ID 999' error message"
-        },
-        {
-          "action": "Enter 'add' command and provide empty title",
-          "expect": "Application displays 'Title cannot be empty' error message"
-        },
-        {
-          "action": "Enter 'unknown' command",
-          "expect": "Application displays 'Unknown command' message and shows help"
-        }
-      ]
-    }
-  ],
-  "aiNotes": {
-    "generationTips": [
-      "When extending the CLI interface, follow the same pattern of validation, delegation to service, and error handling",
-      "Consider implementing a more sophisticated command parser for complex commands",
-      "For a production application, consider adding colorized output and improved formatting"
-    ],
-    "commonPatterns": [
-      "The application follows a simple Command pattern for user interactions",
-      "Error handling is consistent across all user inputs"
-    ]
-  }
-}
+purpose: "CLI entry point for the todo management system"
+
+tensions:
+  - "StorageService is injected into TodoService, not a singleton — preserves testability, don't make it global"
+  - "Command parsing is a simple string split, intentionally without argparse — the command set is small and stable"
+  - "sys.exit(0) on 'exit' command is intentional — no cleanup needed, storage is persisted after each operation"
+
+todos:
+  - "Add priority support (low/medium/high) to TodoItem"
+  - "Evaluate argparse if the command set grows"
+  - "Consider colorized output for better UX"
+
+workflows:
+  add: "prompt title → validate not empty → TodoService.create_todo → display confirmation"
+  complete: "parse id → TodoService.complete_todo → display confirmation | ValueError → 'Invalid ID format' | KeyError → 'No todo found'"
+  update: "parse id → fetch current title → prompt new title → validate → TodoService.update_todo"
+  main_loop: "display all todos → read command → dispatch → repeat until exit"
+
+conceptualTests:
+  - name: "Basic todo lifecycle"
+    steps:
+      - action: "run app, enter 'add', provide title 'Buy milk'"
+        expect: "todo created with status active, assigned ID 1"
+      - action: "enter 'complete 1'"
+        expect: "todo 1 status is completed"
+      - action: "enter 'filter completed'"
+        expect: "only todo 1 is shown"
+      - action: "enter 'filter active'"
+        expect: "empty list message"
+      - action: "enter 'delete 1'"
+        expect: "todo 1 no longer appears in any listing"
+
+  - name: "Update flow"
+    steps:
+      - action: "add todo, then enter 'update 1'"
+        expect: "current title is shown, prompt for new title"
+      - action: "provide new title 'Buy oat milk'"
+        expect: "todo 1 title is updated, confirmation shown"
+      - action: "provide empty string as new title"
+        expect: "error shown, title unchanged"
+
+  - name: "Input validation"
+    steps:
+      - action: "enter 'add', provide empty title"
+        expect: "error 'Title cannot be empty', no todo created"
+      - action: "enter 'complete xyz'"
+        expect: "error 'Invalid ID format', no state change"
+      - action: "enter 'complete 999' (non-existent ID)"
+        expect: "error 'No todo found with ID 999', no state change"
+      - action: "enter any unrecognized command"
+        expect: "message 'Unknown command', help is shown, loop continues"
+
+  - name: "Persistence"
+    steps:
+      - action: "add a todo, exit the app, restart"
+        expect: "todo is still present with same ID and status"

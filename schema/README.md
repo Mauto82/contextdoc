@@ -1,308 +1,159 @@
 # ConceptDoc Schema Specification
 
-This document defines the standard schema for ConceptDoc files (`.cdoc`), designed to provide structured and machine-readable documentation to improve collaboration between human developers and AI assistants.
+ConceptDoc files (`.cdoc`) are lightweight YAML companions to source files. They capture what the code *cannot* say about itself: architectural tensions, intended workflows, and declarative tests.
 
-## Documentation Papers
+**Philosophy:** write only what would genuinely surprise or mislead an AI (or a new developer) reading the code cold. Less is more.
 
-For a comprehensive introduction to ConceptDoc, please refer to these papers:
-- [ConceptDoc Paper (English)](https://mautoblog.com/docs/conceptdoc-en)
-- [ConceptDoc Paper (Italiano)](https://mautoblog.com/docs/conceptdoc-it)
+## Format
 
-## Basic Structure
+YAML. Files live alongside the source: `service.py` → `service.py.cdoc`.
 
-A ConceptDoc file is a JSON document with the following basic structure:
+## Sections
 
-```json
-{
-  "metadata": {
-    "filename": "example.py",
-    "version": "1.0.0",
-    "lastUpdate": "YYYY-MM-DD"
-  },
-  "purpose": "Brief description of the file's purpose",
-  "dependencies": [],
-  "invariants": [],
-  "components": [],
-  "testFixtures": [],
-  "conceptualTests": [],
-  "businessLogic": {},
-  "stateModel": {},
-  "aiNotes": {}
-}
-```
-
-## Main Sections
-
-### 1. Metadata
-
-Basic information about the documented file:
-
-```json
-"metadata": {
-  "filename": "example.py",       // Name of the documented file
-  "version": "1.0.0",             // File version
-  "lastUpdate": "2025-03-22",     // Date of the last update
-  "authors": ["Author Name"]      // Optional: authors of the file
-}
-```
-
-### 2. Purpose
-
-A concise description of the file's purpose:
-
-```json
-"purpose": "Provides functionality for user management, including authentication and authorization"
-```
-
-### 3. Dependencies
-
-List of the file's dependencies with explanations of their use:
-
-```json
-"dependencies": [
-  {
-    "name": "StorageService",
-    "reason": "Manages data persistence",
-    "usage": "Used to load and save data"
-  },
-  {
-    "name": "UserModel",
-    "reason": "Main domain model",
-    "usage": "Manipulated by all methods in this service"
-  }
-]
-```
-
-### 4. Invariants
-
-Conditions that must always be maintained:
-
-```json
-"invariants": [
-  "User IDs are unique and never reused",
-  "Passwords are always hashed before being stored",
-  "Usernames cannot be empty"
-]
-```
-
-### 5. Components
-
-Detailed documentation of classes, methods, and functions:
-
-```json
-"components": [
-  {
-    "name": "UserService.register",
-    "signature": "register(email: str, password: str) -> User",
-    "description": "Registers a new user in the system",
-    "preconditions": [
-      "Email must be valid and not already registered",
-      "Password must meet security requirements"
-    ],
-    "postconditions": [
-      "A new user is created with 'unverified' status",
-      "A verification email is sent to the user"
-    ],
-    "examples": [
-      {
-        "input": {"email": "user@example.com", "password": "SecurePass123!"},
-        "output": "User object with id=1, email='user@example.com', status='unverified'",
-        "description": "Standard user registration"
-      }
-    ],
-    "errors": [
-      {
-        "condition": "Email already registered",
-        "response": "EmailExistsError",
-        "mitigation": "Check if the email exists before registration"
-      },
-      {
-        "condition": "Password does not meet requirements",
-        "response": "WeakPasswordError",
-        "mitigation": "Validate the password before registration"
-      }
-    ],
-    "algorithmNotes": "Uses bcrypt for password hashing with a cost factor of 12"
-  }
-]
-```
-
-### 6. State Model
-
-Definition of possible states and transitions:
-
-```json
-"stateModel": {
-  "states": ["unregistered", "unverified", "active", "suspended", "deleted"],
-  "initialState": "unregistered",
-  "transitions": [
-    {
-      "from": "unregistered",
-      "to": "unverified",
-      "trigger": "register()",
-      "conditions": ["Valid email", "Password meets requirements"]
-    },
-    {
-      "from": "unverified",
-      "to": "active",
-      "trigger": "verify_email(token)",
-      "conditions": ["Valid token", "Token not expired"]
-    },
-    {
-      "from": "active",
-      "to": "suspended",
-      "trigger": "suspend(reason)",
-      "conditions": ["User has violated terms of service"]
-    },
-    {
-      "from": "suspended",
-      "to": "active",
-      "trigger": "reactivate()",
-      "conditions": ["Suspension period ended"]
-    },
-    {
-      "from": "*",
-      "to": "deleted",
-      "trigger": "delete()",
-      "conditions": []
-    }
-  ]
-}
-```
-
-### 7. Test Fixtures
-
-Example data for tests:
-
-```json
-"testFixtures": [
-  {
-    "name": "empty_service",
-    "description": "Service with no users",
-    "data": {
-      "users": [],
-      "_next_id": 1
-    }
-  },
-  {
-    "name": "populated_service",
-    "description": "Service with example users",
-    "data": {
-      "users": [
-        {
-          "id": 1,
-          "email": "user1@example.com",
-          "status": "active",
-          "created_at": "2025-03-22T10:00:00"
-        },
-        {
-          "id": 2,
-          "email": "user2@example.com",
-          "status": "unverified",
-          "created_at": "2025-03-22T11:00:00"
-        }
-      ],
-      "_next_id": 3
-    }
-  }
-]
-```
-
-### 8. Conceptual Tests
-
-Conceptual tests in a declarative format:
-
-```json
-"conceptualTests": [
-  {
-    "name": "Registration and login flow",
-    "steps": [
-      {
-        "action": "register() with valid data",
-        "expect": "User created with 'unverified' status"
-      },
-      {
-        "action": "verify_email() with valid token",
-        "expect": "User transitions to 'active' status"
-      },
-      {
-        "action": "login() with correct credentials",
-        "expect": "User session created"
-      },
-      {
-        "action": "logout()",
-        "expect": "User session terminated"
-      }
-    ]
-  }
-]
-```
-
-### 9. Business Logic
-
-Business rules and constraints:
-
-```json
-"businessLogic": {
-  "passwordPolicy": {
-    "minLength": 8,
-    "requireUppercase": true,
-    "requireLowercase": true,
-    "requireDigits": true,
-    "requireSpecialChars": true
-  },
-  "emailVerification": {
-    "tokenValidity": "24h",
-    "resendCooldown": "15m"
-  },
-  "rateLimit": {
-    "loginAttempts": {
-      "maxAttempts": 5,
-      "windowPeriod": "15m",
-      "lockoutDuration": "30m"
-    }
-  }
-}
-```
-
-### 10. AI Notes
-
-Specific notes for AI assistants:
-
-```json
-"aiNotes": {
-  "generationTips": [
-    "Ensure all authentication operations are protected against timing attacks",
-    "Implement input validation for all publicly exposed parameters",
-    "Use prepared statements for database queries to prevent SQL injection"
-  ],
-  "commonPatterns": [
-    "The service follows the Repository pattern for persistence",
-    "Uses the Factory pattern for creating new users"
-  ],
-  "avoidPatterns": [
-    "Avoid storing passwords in plaintext",
-    "Avoid using predictable session tokens"
-  ]
-}
-```
-
-## Extensibility
-
-The ConceptDoc schema is designed to be extensible. Teams can add custom sections to meet specific project needs while maintaining compatibility with standard tools.
-
-## Validation
-
-To ensure ConceptDoc files comply with the schema, it is recommended to use a JSON Schema validation tool. A complete validation schema will be provided in a future version.
-
-## Examples
-
-For complete examples of ConceptDoc files, see the [examples](../examples/) directory which contains reference implementations.
-
-## Versioning
-
-The ConceptDoc schema follows [Semantic Versioning](https://semver.org/). The current version is 0.1.0 (pre-release).
+All sections are optional. Use only what adds value.
 
 ---
 
-*ConceptDoc: Because your code deserves documentation that is truly understandable by both humans and machines.*
+### `purpose`
+
+One line. What this file *does*, not how.
+
+```yaml
+purpose: "CLI entry point for the todo management system"
+```
+
+---
+
+### `tensions`
+
+The most important section. Document architectural decisions that look wrong but are intentional, or constraints that must not be broken without careful reconsideration. Think of these as inline ADRs.
+
+```yaml
+tensions:
+  - "StorageService is injected, not a singleton — keeps the app testable, don't make it global"
+  - "Command parsing is intentionally naive — see @ref: docs/adr/001-cli-design.md before replacing"
+  - "IDs are never reused after deletion — billing audit trail depends on this"
+```
+
+---
+
+### `todos`
+
+Pending work that lives in the context of this specific file, not in a task tracker.
+
+```yaml
+todos:
+  - "Add priority support to TodoItem"
+  - "Consider argparse if commands grow beyond current set"
+```
+
+---
+
+### `workflows`
+
+Key flows expressed as readable sequences. Not exhaustive — only flows that are non-obvious or span multiple components.
+
+```yaml
+workflows:
+  add_todo: "input title → validate → TodoService.create → StorageService.save → display"
+  complete_todo: "parse id → TodoService.complete → StorageService.save"
+  error_path: "any ValueError from service → print message → return to main loop (never crash)"
+```
+
+---
+
+### `conceptualTests`
+
+Declarative, language-agnostic test scenarios. These describe *what the system should do*, not *how to test it*. They survive refactors and work across implementations.
+
+```yaml
+conceptualTests:
+  - name: "Basic todo lifecycle"
+    steps:
+      - action: "add todo with valid title"
+        expect: "todo created with status 'active', assigned an ID"
+      - action: "complete <id>"
+        expect: "todo status becomes 'completed'"
+      - action: "delete <id>"
+        expect: "todo no longer appears in any listing"
+
+  - name: "Input validation"
+    steps:
+      - action: "add todo with empty title"
+        expect: "error message shown, no todo created"
+      - action: "complete with non-integer id"
+        expect: "error message 'Invalid ID format', no state change"
+      - action: "complete with valid integer but non-existent id"
+        expect: "error message 'No todo found with ID X', no state change"
+```
+
+---
+
+### `ref`
+
+Links to external documents for context too large to inline.
+
+```yaml
+ref:
+  - "docs/adr/001-cli-design.md"
+  - "docs/state-model.md"
+```
+
+---
+
+## Full example
+
+```yaml
+purpose: "Manages user authentication and session lifecycle"
+
+tensions:
+  - "Tokens are stateless JWT — no revocation list, sessions cannot be forcibly terminated"
+  - "bcrypt cost factor is 12 — intentionally slow, do not reduce for performance"
+  - "Email is immutable after registration — downstream systems use it as a stable identifier"
+
+todos:
+  - "Add refresh token rotation"
+
+workflows:
+  registration: "validate input → hash password → persist user (status: unverified) → send verification email"
+  login: "validate credentials → check status (must be active) → issue JWT"
+  verification: "validate token → check expiry → set status to active → invalidate token"
+
+conceptualTests:
+  - name: "Registration and activation flow"
+    steps:
+      - action: "register with valid email and strong password"
+        expect: "user created with status 'unverified'"
+      - action: "verify email with valid token"
+        expect: "user status becomes 'active'"
+      - action: "login with correct credentials"
+        expect: "JWT returned"
+      - action: "login before email verification"
+        expect: "error: account not active"
+
+  - name: "Password security"
+    steps:
+      - action: "register with password shorter than 8 chars"
+        expect: "WeakPasswordError, no user created"
+      - action: "register with valid password, inspect stored value"
+        expect: "stored value is a bcrypt hash, never plaintext"
+
+ref:
+  - "docs/adr/002-auth-strategy.md"
+```
+
+---
+
+## What NOT to put in a `.cdoc`
+
+- Method signatures and parameters (readable from the code)
+- Dependency lists (visible from imports)
+- Version and author metadata (that's what git is for)
+- Obvious pre/postconditions that any developer would assume
+- Anything you'd have to update every time the implementation changes
+
+---
+
+## Versioning
+
+ConceptDoc schema version: **0.2.0**

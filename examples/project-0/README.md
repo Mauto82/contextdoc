@@ -10,7 +10,7 @@ This project implements a command-line todo list manager with the following feat
 - Filter by status
 - Persist data to a JSON file
 
-The primary purpose is to demonstrate how ConceptDoc can provide rich contextual information about even a simple application.
+The primary purpose is to demonstrate ConceptDoc in practice: lightweight `.cdoc` companions that capture what the code cannot say about itself.
 
 ## File Structure
 
@@ -74,29 +74,11 @@ Once the application is running, you can use the following commands:
 
 ## Exploring ConceptDoc
 
-The key feature of this project is the `.cdoc` files that accompany each Python file. These provide:
+The `.cdoc` files accompany each Python file and contain only what the code cannot say about itself:
 
-1. **Rich context** about the purpose and design of each component
-2. **State models** that define valid states and transitions
-3. **Invariants** that must be maintained 
-4. **Conceptual tests** that verify behavior
-5. **Test fixtures** for standardized testing
+- **Tensions** — architectural decisions that look arbitrary but are intentional
+- **Workflows** — key flows as readable sequences, including error paths
+- **Conceptual tests** — declarative, language-agnostic scenarios that survive refactors
+- **TODOs** — pending work in the context of the specific file
 
-To see the power of ConceptDoc
-
-1. Open a `.py` file and its corresponding `.py.cdoc` file side by side
-2. Note how the doc file explains not just what the code does, but why
-3. See how conceptual tests describe high-level behaviors
-4. Observe how invariants capture critical properties that must be maintained
-
-## ConceptDoc Benefits Demonstrated
-
-This simple example shows how ConceptDoc
-
-- **Clarifies intent**: Understanding why code works as it does
-- **Defines boundaries**: Clear expectations about states and transitions
-- **Establishes contracts**: Explicit pre- and post-conditions
-- **Creates tests**: Ready-made scenarios for validation
-- **Sets standards**: Consistent test data across components
-
-Even in this minimal example, these benefits add significant value beyond traditional documentation approaches.
+Open `todo_app.py` and `todo_app.py.cdoc` side by side: the source tells you *what* the code does, the `.cdoc` tells you *why* certain constraints exist and *what* the intended behavior should be across full scenarios.

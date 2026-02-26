@@ -1,116 +1,70 @@
-# ConceptDoc: Enhanced Documentation for the AI Era
+# ConceptDoc
 
-ConceptDoc is an emerging standard for creating structured, machine-readable documentation that enhances collaboration between human developers and AI assistants.
+ConceptDoc is a lightweight documentation standard for the AI-assisted development era. It provides structured context to AI coding agents — and human developers — through small YAML companion files that live alongside source code.
 
-## 🚀 The Vision
+## The Problem
 
-As AI tools become integral to software development, our documentation practices need to evolve. ConceptDoc provides a standardized way to document code that goes beyond traditional approaches, offering rich context that both humans and AI systems can understand and leverage.
+Source code tells you *what* the system does. It rarely tells you *why* specific constraints exist, *what* the intended behavior is across full workflows, or *what* the expected behavior is in edge cases. When an AI assistant (or a new developer) reads your code cold, this missing context leads to subtle mistakes: removing a constraint that looks redundant but isn't, or generating code that passes unit tests but violates business rules.
 
-## 🔍 Core Concept
+## The Approach
 
-ConceptDoc introduces parallel documentation files (e.g., `user_service.py.cdoc`) that contain structured metadata about your code files. These files include:
+ConceptDoc files (`.cdoc`) capture only what the code cannot say about itself:
 
-- **State models** with explicit transitions
-- **Invariants** that must be maintained
-- **Pre/post-conditions** for methods
-- **Standardized fixtures** for testing
-- **Conceptual tests** in a declarative format
-- **Business logic** rules and constraints
-- **AI-specific guidance** for code generation
+- **Tensions** — architectural decisions that look wrong but are intentional
+- **Workflows** — key flows expressed as readable sequences
+- **Conceptual tests** — declarative, language-agnostic test scenarios
+- **TODOs** — pending work in the context of a specific file
+- **Refs** — links to deeper documentation when needed
 
-## 💡 Example
+Everything else — signatures, dependencies, obvious behavior — stays in the code where it belongs.
 
-```json
-// user_service.py.cdoc
-{
-  "metadata": {
-    "filename": "user_service.py",
-    "version": "1.2.0",
-    "lastUpdate": "2025-03-22"
-  },
-  "purpose": "Manages user authentication and authorization",
-  "stateModel": {
-    "states": ["unregistered", "unverified", "active", "suspended"],
-    "initialState": "unregistered",
-    "transitions": [
-      {
-        "from": "unregistered",
-        "to": "unverified",
-        "trigger": "register()",
-        "conditions": ["Valid email", "Password meets requirements"]
-      },
-      // More transitions...
-    ]
-  },
-  "components": [
-    {
-      "name": "UserService.register",
-      "signature": "register(email: str, password: str) -> User",
-      "description": "Registers a new user in the system",
-      "preconditions": [
-        "Email must be valid and not already registered",
-        "Password must meet security requirements"
-      ],
-      "postconditions": [
-        "A new user is created with 'unverified' state",
-        "A verification email is sent to the user"
-      ],
-      "examples": [
-        // Examples...
-      ],
-      "errors": [
-        // Potential errors...
-      ]
-    }
-  ],
-  "conceptualTests": [
-    {
-      "name": "Registration and login flow",
-      "steps": [
-        {
-          "action": "register() with valid data",
-          "expect": "User created with 'unverified' state"
-        },
-        // More test steps...
-      ]
-    }
-  ]
-}
+## Example
+
+```yaml
+# user_service.py.cdoc
+purpose: "Manages user authentication and session lifecycle"
+
+tensions:
+  - "Tokens are stateless JWT — no revocation list, sessions cannot be forcibly terminated"
+  - "bcrypt cost factor is 12 — intentionally slow, do not reduce for performance"
+  - "Email is immutable after registration — downstream systems use it as a stable identifier"
+
+workflows:
+  registration: "validate input → hash password → persist (status: unverified) → send verification email"
+  login: "validate credentials → check status is active → issue JWT"
+
+conceptualTests:
+  - name: "Registration and activation flow"
+    steps:
+      - action: "register with valid email and strong password"
+        expect: "user created with status 'unverified'"
+      - action: "verify email with valid token"
+        expect: "user status becomes 'active'"
+      - action: "login before email verification"
+        expect: "error: account not active"
 ```
 
-## 🛠️ Current State of the Project
+## Design Principles
 
-This project is currently in the **concept and standardization phase**. We are:
+**Non-binding.** ConceptDoc files are documentation, not configuration. There is no runtime enforcement, no mandatory schema validation. Use the sections that add value, skip the ones that don't.
 
-0. Defining the schema for ConceptDoc files
+**Minimal.** The right amount of content is the minimum needed. A file with one `tensions` entry and three `conceptualTests` is better than a comprehensive file that nobody keeps up to date.
 
-## 🤝 How to Contribute
+**Survive refactors.** Conceptual tests describe *intent*, not implementation. They don't break when you rename a method or switch a library.
 
-We're looking for contributors to help shape this standard:
+**AI-first, human-readable.** The format is designed to be consumed by AI coding agents as context, but written and maintained by humans.
 
-- **Schema designers**: Help define the structure of ConceptDoc files
-- **Tool developers**: Build utilities for working with ConceptDoc files
-- **Early adopters**: Try the approach in your projects and provide feedback
-- **Documentation writers**: Help improve explanations and examples
-- **AI researchers**: Provide insights on how to maximize utility for AI systems
-
-## 📚 Getting Started
+## Getting Started
 
 1. Check out the [schema specification](./schema/README.md)
 2. Look at the [examples](./examples/) directory
 
-## 🔮 Future Roadmap
+## Current State
 
-- Q1 2025: Finalize v1.0 of the schema (we're already behind schedule, of course! 🙈 🤣)
-- Q2 2025: Start development of tools and and IDE plugins
-- Q3 2025: Release stable versions of tooling
-- Q4 2025: Publish case studies and best practices
-- 2026: Propose integration with major frameworks
+The project is in **active design phase**. The schema is at v0.2.0.
 
-## 📝 License
+Contributions welcome — especially: real-world examples, feedback on the schema, and tooling ideas (linters, IDE plugins, git hooks to flag stale `.cdoc` files).
 
-This project is licensed under the MIT License
+## License
 
----
-
-*ConceptDoc: Because your code deserves documentation that both humans and machines can truly understand.*
+MIT
