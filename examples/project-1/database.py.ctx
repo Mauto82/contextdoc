@@ -1,0 +1,9 @@
+purpose: "Async SQLAlchemy engine, session factory, and FastAPI dependency"
+
+tensions:
+  - "expire_on_commit=False — required for async sessions: after commit, accessing a column would trigger a lazy load on a closed connection and raise MissingGreenlet. Do not remove this flag"
+  - "pool_size=5/max_overflow=10 are set explicitly even for SQLite — prepares the config for PostgreSQL migration without code changes. SQLite ignores them"
+  - "get_session() uses async with, not a plain return — the context manager ensures session.close() is called even when the endpoint raises an exception. Never convert to a bare yield"
+
+workflows:
+  request_lifecycle: "FastAPI calls get_session → async with SessionLocal() as session → yield session to endpoint → session.close() on exit (always, including on exception)"

@@ -1,0 +1,38 @@
+purpose: "FastAPI app: lifespan, route definitions for registration, login, and user deletion"
+
+tensions:
+  - "Table creation is in lifespan, not at module import — avoids using the async engine before the event loop is running, which would raise RuntimeError on startup"
+  - "Registration returns 409 on duplicate email, not 400 — semantically correct: the resource already exists, the request itself is well-formed"
+  - "login uses UserCreate (email+password) instead of a dedicated LoginRequest schema — acceptable while login input matches registration input; revisit if they diverge"
+  - "delete_user does not check authentication — intentional for example simplicity. Production use requires verifying the caller is authorized to delete the target user"
+
+workflows:
+  register: "POST /register → check email uniqueness (409 if exists) → hash password → persist (is_active=False) → return UserOut"
+  login: "POST /login → lookup by email → verify password (401 if mismatch) → check is_active (403 if False) → issue JWT"
+  delete: "DELETE /users/{id} → lookup (404 if missing) → set is_deleted=True → commit (never hard-delete)"
+
+conceptualTests:
+  - name: "Registration"
+    steps:
+      - action: "POST /register with valid email and password"
+        expect: "201, UserOut with is_active=False"
+      - action: "POST /register with the same email again"
+        expect: "409 Conflict"
+
+  - name: "Login"
+    steps:
+      - action: "login with an email that was never registered"
+        expect: "401 Invalid credentials"
+      - action: "login with correct email, wrong password"
+        expect: "401 Invalid credentials"
+      - action: "login with correct credentials, user not yet active"
+        expect: "403 Account not active"
+      - action: "activate user via DB, then login with correct credentials"
+        expect: "200, access_token returned"
+
+  - name: "Soft delete"
+    steps:
+      - action: "DELETE /users/{id} for an existing user"
+        expect: "204, user row still in DB with is_deleted=True"
+      - action: "DELETE /users/{id} for a non-existent id"
+        expect: "404 Not found"

@@ -1,0 +1,12 @@
+purpose: "SQLAlchemy ORM model for User and Pydantic schemas for API I/O"
+
+tensions:
+  - "email is immutable after registration — used as a stable external identifier by downstream integrations. There is no update endpoint for email by design, not by omission"
+  - "is_active defaults to False — new users cannot log in until explicitly activated (email verification or admin action). Changing the default breaks the registration security model"
+  - "is_deleted is a soft-delete flag — users are never hard-deleted. Audit requirements and foreign key integrity are the reasons. Any hard-delete flow requires an explicit data retention decision"
+  - "UserOut intentionally excludes hashed_password — never add password fields to any Pydantic output schema, regardless of encoding"
+
+todos:
+  - "Add email verification flow: token generation + POST /verify endpoint + set is_active=True"
+  - "Add updated_at with auto-update on write"
+  - "Add role field (admin/user) when authorization is needed"

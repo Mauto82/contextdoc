@@ -1,0 +1,28 @@
+purpose: "JWT token creation/validation and bcrypt password hashing"
+
+tensions:
+  - "Tokens are stateless — no blacklist, no revocation. A token stays valid until expiry even after logout or password change. This is an accepted tradeoff; adding a revocation list requires a shared store (Redis) and changes the architecture significantly"
+  - "bcrypt rounds are passlib default (12) — intentionally slow to resist brute force. Do not replace with sha256 or reduce rounds for performance reasons"
+  - "ACCESS_TOKEN_EXPIRE_MINUTES is 30 — short by design to limit the exposure window of a leaked token. Do not increase without understanding the security tradeoff"
+  - "SECRET_KEY is a placeholder — must come from an environment variable in production. The hardcoded value is intentional for the example only"
+
+conceptualTests:
+  - name: "Password hashing"
+    steps:
+      - action: "call hash_password('secret123')"
+        expect: "returns a string that is not 'secret123'"
+      - action: "call verify_password('secret123', the hash)"
+        expect: "returns True"
+      - action: "call verify_password('wrong', the hash)"
+        expect: "returns False"
+
+  - name: "Token lifecycle"
+    steps:
+      - action: "create token with payload {sub: '42'}"
+        expect: "returns a non-empty JWT string"
+      - action: "decode the token immediately"
+        expect: "payload contains sub='42', exp is ~30 minutes in the future"
+      - action: "decode a token signed with a different key"
+        expect: "raises HTTP 401"
+      - action: "decode a token with exp in the past"
+        expect: "raises HTTP 401"
