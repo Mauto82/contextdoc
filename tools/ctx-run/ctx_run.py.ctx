@@ -1,0 +1,51 @@
+purpose: "LLM-powered CLI runner for ContextDoc conceptualTests: reads .ctx files, evaluates each scenario via an LLM, reports pass/fail per step"
+
+tensions:
+  - "One LLM call per scenario, not per step — steps within a scenario can be data-dependent (e.g. 'the hash from step 1'); splitting into per-step calls loses that inter-step context"
+  - "temperature=0 is non-negotiable — a test runner that gives different results on consecutive runs is useless; do not expose this as a flag"
+  - "Missing source file is a warning, not a hard error — a .ctx may document a planned module or a deleted file; the LLM call still runs and marks steps as unverifiable"
+  - "overall_passed is recomputed from steps, not trusted from LLM — guards against LLM inconsistency where overall=true but a step has passed=false"
+  - "No Rich dependency — three color constants and ANSI codes are sufficient for pass/fail output; Rich adds ~2MB for marginal benefit in this context"
+  - "LiteLLM as the only provider abstraction — do not add per-provider clients; the model string convention (ollama/x, gpt-x, claude-x) handles routing"
+
+workflows:
+  run_command: "collect_ctx_files(path) → for each .ctx: load_ctx → resolve_source → for each scenario: build_prompt → call_llm → parse_response → build_scenario_result → render"
+  parse_fallback: "json.loads(raw) → strip markdown fences → regex extract {...} → if all fail: mark scenario as error with raw text"
+  exit_code: "any scenario failed or file error → exit 1 | tool-level error (bad path) → exit 2 | all pass → exit 0"
+
+todos:
+  - "Add --timeout flag for LLM call (useful with slow local Ollama models)"
+  - "Add caching layer: skip re-running scenarios whose .ctx and source haven't changed since last run"
+  - "Consider a --fix flag: after a FAIL, prompt the LLM to suggest what in the code should change"
+
+conceptualTests:
+  - name: "Single .ctx file run"
+    steps:
+      - action: "run ctx-run run auth.py.ctx --model ollama/llama3"
+        expect: "output shows scenario names, per-step PASS/FAIL, summary line with step counts"
+      - action: "all steps pass"
+        expect: "exit code 0"
+      - action: "one step fails"
+        expect: "exit code 1, failing step shown in red with explanation"
+
+  - name: "Directory scan"
+    steps:
+      - action: "run ctx-run run examples/ against a directory with 3 .ctx files, 2 have conceptualTests"
+        expect: "runs scenarios from the 2 files with conceptualTests, shows the third as skipped"
+
+  - name: "Missing source file"
+    steps:
+      - action: "run ctx-run run on a .ctx whose source .py does not exist"
+        expect: "warning printed, LLM call still runs, steps marked failed with 'source not available' explanation, exit code 1"
+
+  - name: "LLM parse failure"
+    steps:
+      - action: "LLM returns a response that cannot be parsed as JSON after all 3 fallback layers"
+        expect: "scenario marked as error (not crash), raw response first 200 chars shown, run continues with next scenario"
+
+  - name: "JSON output"
+    steps:
+      - action: "run with --output json"
+        expect: "valid JSON printed to stdout with summary object and results array, no ANSI codes"
+      - action: "pipe output to jq"
+        expect: "parses without error"
