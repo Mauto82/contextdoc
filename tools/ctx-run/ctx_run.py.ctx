@@ -13,11 +13,6 @@ workflows:
   parse_fallback: "json.loads(raw) → strip markdown fences → regex extract {...} → if all fail: mark scenario as error with raw text"
   exit_code: "any scenario failed or file error → exit 1 | tool-level error (bad path) → exit 2 | all pass → exit 0"
 
-todos:
-  - "Add --timeout flag for LLM call (useful with slow local Ollama models)"
-  - "Add caching layer: skip re-running scenarios whose .ctx and source haven't changed since last run"
-  - "Consider a --fix flag: after a FAIL, prompt the LLM to suggest what in the code should change"
-
 conceptualTests:
   - name: "Single .ctx file run"
     steps:

@@ -3,11 +3,24 @@ Shared fixtures for ctx-run tests.
 """
 import sys
 import os
+from unittest.mock import patch
 
 # Make ctx_run importable from tests/
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 import pytest
+
+
+@pytest.fixture(autouse=True)
+def isolated_cache(tmp_path):
+    """
+    Give every test its own cache file so tests don't share cached LLM results.
+    Without this, two tests using the same scenario/source/model would share a
+    cache key and the second test would get a cache hit instead of calling the mock.
+    """
+    cache_file = str(tmp_path / "ctx_run_test_cache.json")
+    with patch("ctx_run._cache_path", return_value=cache_file):
+        yield cache_file
 
 
 SAMPLE_CTX = """

@@ -1,0 +1,38 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.backends.legacy:build"
+
+[project]
+name = "ctx-run"
+version = "0.3.0"
+description = "LLM-powered runner for ContextDoc conceptual tests"
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "MIT" }
+keywords = ["contextdoc", "llm", "testing", "documentation", "ai"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Software Development :: Testing",
+    "Topic :: Software Development :: Documentation",
+]
+dependencies = [
+    "litellm>=1.35.0",
+    "click>=8.1.0",
+    "pyyaml>=6.0.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/Mauto82/contextdoc"
+Repository = "https://github.com/Mauto82/contextdoc"
+"Bug Tracker" = "https://github.com/Mauto82/contextdoc/issues"
+
+[project.scripts]
+ctx-run = "ctx_run:cli"
+
+[tool.setuptools]
+py-modules = ["ctx_run"]

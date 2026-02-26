@@ -50,6 +50,18 @@ python tools/ctx-run/ctx_run.py run examples/ --output json
 
 # Verbose: show explanations for passing steps too
 python tools/ctx-run/ctx_run.py run examples/ --verbose
+
+# After a FAIL, ask the LLM to suggest a fix
+python tools/ctx-run/ctx_run.py run examples/ --fix
+
+# Set a longer timeout for slow local models
+python tools/ctx-run/ctx_run.py run examples/ --model ollama/llama3 --timeout 120
+
+# Skip cache and always re-run
+python tools/ctx-run/ctx_run.py run examples/ --no-cache
+
+# Clear the local result cache
+python tools/ctx-run/ctx_run.py clear-cache
 ```
 
 ## Supported providers
@@ -78,7 +90,12 @@ For Ollama, make sure the Ollama server is running (`ollama serve`) and the mode
 --no-color            Disable ANSI colors (auto-disabled when stdout is not a TTY)
 --output [text|json]  Output format (default: text)
 --verbose             Show LLM explanations for passing steps too
+--timeout INT         LLM call timeout in seconds (default: 60)
+--no-cache            Always call the LLM, even if a cached result exists
+--fix                 After a failing scenario, ask the LLM to suggest a fix
 ```
+
+Results are cached in `~/.cache/ctx-run/cache.json` by default. The cache key is a hash of the scenario definition, source code, and model — so the cache invalidates automatically when any of these change. Use `ctx-run clear-cache` to wipe it manually.
 
 ## Exit codes
 

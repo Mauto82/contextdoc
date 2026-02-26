@@ -124,7 +124,7 @@ python tools/ctx-run/ctx_run.py run examples/ --model claude-haiku-20240307
 The project is at **v0.3.0**.
 
 - Schema: v0.3.0 — YAML, all sections optional, IDE autocomplete via JSON Schema
-- Examples: two reference projects (`project-0` CLI, `project-1` FastAPI)
+- Examples: three reference projects (`project-0` CLI, `project-1` FastAPI async, `project-2` TDD demo with intentional failures)
 - Tools: `ctx-run` — LLM-powered conceptual test runner (Anthropic / OpenAI / Ollama)
 - Real-world: [notebook-lm-downloader](https://github.com/Mauto82/notebook-lm-downloader)
 
