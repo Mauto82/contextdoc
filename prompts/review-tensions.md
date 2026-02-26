@@ -1,13 +1,13 @@
 # Prompt: Review code against tensions
 
-Use this prompt to verify that a file (or a proposed change) does not violate the architectural constraints defined in the `.cdoc`.
+Use this prompt to verify that a file (or a proposed change) does not violate the architectural constraints defined in the `.ctx`.
 
 ---
 
 ## Prompt
 
 ```
-Read `<FILE>` and its companion `<FILE>.cdoc`.
+Read `<FILE>` and its companion `<FILE>.ctx`.
 
 For each item in `tensions`:
 1. Check whether the current code respects the constraint
@@ -24,7 +24,7 @@ Output format: one section per tension, verdict (OK / VIOLATION), explanation if
 
 ## Example usage
 
-> "Read `services/storage_service.py` and `services/storage_service.py.cdoc`. For each tension, check whether the code respects the constraint."
+> "Read `services/storage_service.py` and `services/storage_service.py.ctx`. For each tension, check whether the code respects the constraint."
 
 ---
 

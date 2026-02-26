@@ -1,13 +1,13 @@
-# Prompt: Generate tests from .cdoc
+# Prompt: Generate tests from .ctx
 
-Use this prompt to generate concrete tests from the `conceptualTests` section of a `.cdoc` file.
+Use this prompt to generate concrete tests from the `conceptualTests` section of a `.ctx` file.
 
 ---
 
 ## Prompt
 
 ```
-Read `<FILE>.cdoc` and implement every scenario in `conceptualTests` as tests in `tests/test_<FILE>.<EXT>`.
+Read `<FILE>.ctx` and implement every scenario in `conceptualTests` as tests in `tests/test_<FILE>.<EXT>`.
 
 Rules:
 - One test function per scenario step, or one test class per scenario
@@ -24,7 +24,7 @@ Framework: [pytest / jest / unittest / ...]
 
 ## Example usage
 
-> "Read `services/todo_service.py.cdoc` and implement every scenario in `conceptualTests` as pytest tests in `tests/test_todo_service.py`."
+> "Read `services/todo_service.py.ctx` and implement every scenario in `conceptualTests` as pytest tests in `tests/test_todo_service.py`."
 
 ---
 

@@ -1,6 +1,6 @@
 # Project 0: Todo List Manager
 
-A simple demonstration of ConceptDoc in action, using a basic todo list application.
+A simple demonstration of ContextDoc in action, using a basic todo list application.
 
 ## Overview
 
@@ -10,7 +10,7 @@ This project implements a command-line todo list manager with the following feat
 - Filter by status
 - Persist data to a JSON file
 
-The primary purpose is to demonstrate ConceptDoc in practice: lightweight `.cdoc` companions that capture what the code cannot say about itself.
+The primary purpose is to demonstrate ContextDoc in practice: lightweight `.ctx` companions that capture what the code cannot say about itself.
 
 ## File Structure
 
@@ -19,15 +19,15 @@ The primary purpose is to demonstrate ConceptDoc in practice: lightweight `.cdoc
 ├── Dockerfile                      # Container definition
 ├── docker-compose.yml              # Container orchestration
 ├── todo_app.py                     # Main application
-├── todo_app.py.cdoc                # ConceptDoc for main application
+├── todo_app.py.ctx                # ContextDoc for main application
 ├── models/
 │   ├── todo_item.py                # Todo item model
-│   └── todo_item.py.cdoc           # ConceptDoc for model
+│   └── todo_item.py.ctx           # ContextDoc for model
 └── services/
     ├── todo_service.py             # Business logic
-    ├── todo_service.py.cdoc        # ConceptDoc for business logic
+    ├── todo_service.py.ctx        # ContextDoc for business logic
     ├── storage_service.py          # Persistence layer
-    └── storage_service.py.cdoc     # ConceptDoc for persistence
+    └── storage_service.py.ctx     # ContextDoc for persistence
 ```
 
 ## Running the Application
@@ -72,13 +72,13 @@ Once the application is running, you can use the following commands:
 - `help` - Display available commands
 - `exit` - Exit the application
 
-## Exploring ConceptDoc
+## Exploring ContextDoc
 
-The `.cdoc` files accompany each Python file and contain only what the code cannot say about itself:
+The `.ctx` files accompany each Python file and contain only what the code cannot say about itself:
 
 - **Tensions** — architectural decisions that look arbitrary but are intentional
 - **Workflows** — key flows as readable sequences, including error paths
 - **Conceptual tests** — declarative, language-agnostic scenarios that survive refactors
 - **TODOs** — pending work in the context of the specific file
 
-Open `todo_app.py` and `todo_app.py.cdoc` side by side: the source tells you *what* the code does, the `.cdoc` tells you *why* certain constraints exist and *what* the intended behavior should be across full scenarios.
+Open `todo_app.py` and `todo_app.py.ctx` side by side: the source tells you *what* the code does, the `.ctx` tells you *why* certain constraints exist and *what* the intended behavior should be across full scenarios.

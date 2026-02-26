@@ -1,12 +1,12 @@
-# ConceptDoc Schema Specification
+# ContextDoc Schema Specification
 
-ConceptDoc files (`.cdoc`) are lightweight YAML companions to source files. They capture what the code *cannot* say about itself: architectural tensions, intended workflows, and declarative tests.
+ContextDoc files (`.ctx`) are lightweight YAML companions to source files. They capture what the code *cannot* say about itself: architectural tensions, intended workflows, and declarative tests.
 
 **Philosophy:** write only what would genuinely surprise or mislead an AI (or a new developer) reading the code cold. Less is more.
 
 ## Format
 
-YAML. Files live alongside the source: `service.py` → `service.py.cdoc`.
+YAML. Files live alongside the source: `service.py` → `service.py.ctx`.
 
 ## Sections
 
@@ -144,7 +144,7 @@ ref:
 
 ---
 
-## What NOT to put in a `.cdoc`
+## What NOT to put in a `.ctx`
 
 - Method signatures and parameters (readable from the code)
 - Dependency lists (visible from imports)
@@ -156,11 +156,11 @@ ref:
 
 ## Operational layer
 
-The schema defines the format of `.cdoc` files. To use them effectively with AI agents, pair them with:
+The schema defines the format of `.ctx` files. To use them effectively with AI agents, pair them with:
 
-- A `CLAUDE.md` at the project root with operational instructions (when to read `.cdoc`, how to handle tensions, how to generate tests)
-- Reusable prompts for common operations: generating tests from `conceptualTests`, reviewing tensions, syncing `.cdoc` after code changes
-- A git pre-commit hook that warns when source files are modified without updating their `.cdoc` companion
+- A `CLAUDE.md` at the project root with operational instructions (when to read `.ctx`, how to handle tensions, how to generate tests)
+- Reusable prompts for common operations: generating tests from `conceptualTests`, reviewing tensions, syncing `.ctx` after code changes
+- A git pre-commit hook that warns when source files are modified without updating their `.ctx` companion
 
 See the [`prompts/`](../prompts/) directory, [`hooks/`](../hooks/) directory, and [`examples/project-0/CLAUDE.md`](../examples/project-0/CLAUDE.md) for reference.
 
@@ -168,4 +168,4 @@ See the [`prompts/`](../prompts/) directory, [`hooks/`](../hooks/) directory, an
 
 ## Versioning
 
-ConceptDoc schema version: **0.2.0**
+ContextDoc schema version: **0.2.0**

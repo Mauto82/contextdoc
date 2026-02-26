@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 #
-# ConceptDoc pre-commit hook
+# ContextDoc pre-commit hook
 #
-# Warns when a source file is staged without its .cdoc companion being updated.
-# Does NOT block the commit — ConceptDoc is non-binding.
+# Warns when a source file is staged without its .ctx companion being updated.
+# Does NOT block the commit — ContextDoc is non-binding.
 #
 # Install: cp hooks/pre-commit .git/hooks/pre-commit && chmod +x .git/hooks/pre-commit
 # Or use: bash hooks/install.sh
@@ -25,13 +25,13 @@ while IFS= read -r staged_file; do
     continue
   fi
 
-  cdoc_file="${staged_file}.cdoc"
+  cdoc_file="${staged_file}.ctx"
 
   if [[ ! -f "$cdoc_file" ]]; then
-    # .cdoc doesn't exist at all — suggest creating one
-    warnings+=("  ⚠  $staged_file — no companion .cdoc found (consider creating $cdoc_file)")
+    # .ctx doesn't exist at all — suggest creating one
+    warnings+=("  ⚠  $staged_file — no companion .ctx found (consider creating $cdoc_file)")
   elif ! git diff --cached --name-only | grep -qx "$cdoc_file"; then
-    # .cdoc exists but is not staged alongside the source change
+    # .ctx exists but is not staged alongside the source change
     warnings+=("  ⚠  $staged_file was modified but $cdoc_file was not staged")
   fi
 
@@ -39,15 +39,15 @@ done < <(git diff --cached --name-only | grep -E "$ext_pattern")
 
 if [[ ${#warnings[@]} -gt 0 ]]; then
   echo ""
-  echo "╔─ ConceptDoc ──────────────────────────────────────────────────╗"
-  echo "│ Some source files may need their .cdoc updated:               │"
+  echo "╔─ ContextDoc ──────────────────────────────────────────────────╗"
+  echo "│ Some source files may need their .ctx updated:               │"
   echo "╚───────────────────────────────────────────────────────────────╝"
   for w in "${warnings[@]}"; do
     echo "$w"
   done
   echo ""
   echo "  Run the sync-cdoc prompt to check what needs updating."
-  echo "  Committing anyway — ConceptDoc hooks are warnings, not blockers."
+  echo "  Committing anyway — ContextDoc hooks are warnings, not blockers."
   echo ""
 fi
 

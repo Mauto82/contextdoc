@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
-# Installs ConceptDoc git hooks into the current repository.
-# Run from the root of the project where you want to use ConceptDoc.
+# Installs ContextDoc git hooks into the current repository.
+# Run from the root of the project where you want to use ContextDoc.
 #
 # Usage: bash /path/to/concept-doc/hooks/install.sh
 
@@ -28,7 +28,7 @@ fi
 cp "$SCRIPT_DIR/pre-commit" "$TARGET"
 chmod +x "$TARGET"
 
-echo "✓ ConceptDoc pre-commit hook installed at $TARGET"
+echo "✓ ContextDoc pre-commit hook installed at $TARGET"
 echo ""
 echo "The hook will warn (not block) when source files are committed"
-echo "without updating their .cdoc companions."
+echo "without updating their .ctx companions."

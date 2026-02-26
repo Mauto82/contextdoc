@@ -1,8 +1,8 @@
-# Working on ConceptDoc
+# Working on ContextDoc
 
 ## What this project is
 
-ConceptDoc is a documentation standard. The main deliverables are:
+ContextDoc is a documentation standard. The main deliverables are:
 - `schema/README.md` — the schema spec (current version: 0.2.0)
 - `README.md` — the project overview and philosophy
 - `examples/` — reference implementations showing the standard in practice
@@ -11,10 +11,10 @@ ConceptDoc is a documentation standard. The main deliverables are:
 
 - Format is YAML, not JSON
 - All sections are optional
-- A `.cdoc` file should never exceed ~60 lines — if it does, it's probably over-documented
+- A `.ctx` file should never exceed ~60 lines — if it does, it's probably over-documented
 - Document only what would surprise an AI or new developer reading the code cold
 - `tensions` is the most important section
-- `conceptualTests` is the most unique section — it's what differentiates ConceptDoc from existing tools
+- `conceptualTests` is the most unique section — it's what differentiates ContextDoc from existing tools
 
 ## When modifying the schema
 
@@ -26,12 +26,12 @@ ConceptDoc is a documentation standard. The main deliverables are:
 ## When adding examples
 
 - Each example lives in `examples/project-N/`
-- Every `.py` file must have a corresponding `.cdoc`
-- Include a `CLAUDE.md` in the example project — it demonstrates how ConceptDoc and operational instructions work together
+- Every `.py` file must have a corresponding `.ctx`
+- Include a `CLAUDE.md` in the example project — it demonstrates how ContextDoc and operational instructions work together
 - Include a `README.md` explaining the example
 
 ## What not to do
 
 - Don't add verbose sections back (components, dependencies, metadata, testFixtures, aiNotes)
 - Don't make sections mandatory
-- Don't add runtime enforcement or tooling that couples `.cdoc` to a specific language
+- Don't add runtime enforcement or tooling that couples `.ctx` to a specific language
