@@ -166,6 +166,34 @@ See the [`prompts/`](../prompts/) directory, [`hooks/`](../hooks/) directory, an
 
 ---
 
+## Machine-readable schema
+
+A JSON Schema is available at [`schema/contextdoc.schema.json`](./contextdoc.schema.json).
+
+It enables **autocomplete and inline documentation** in editors that support the YAML Language Server (VS Code with the [YAML extension](https://marketplace.visualstudio.com/items?itemName=redhat.vscode-yaml), JetBrains IDEs, Neovim with yaml-lsp).
+
+Add this comment at the top of any `.ctx` file to activate it:
+
+```yaml
+# yaml-language-server: $schema=https://raw.githubusercontent.com/Mauto82/concept-doc/main/schema/contextdoc.schema.json
+
+purpose: "..."
+tensions:
+  - "..."
+```
+
+Or configure it globally for all `.ctx` files in VS Code (`settings.json`):
+
+```json
+"yaml.schemas": {
+  "https://raw.githubusercontent.com/Mauto82/concept-doc/main/schema/contextdoc.schema.json": "**/*.ctx"
+}
+```
+
+The schema is intentionally permissive: all sections are optional, no fields are required at the top level. It validates structure (e.g. `conceptualTests` steps must have `action` and `expect`) without mandating content.
+
+---
+
 ## Versioning
 
 ContextDoc schema version: **0.2.0**

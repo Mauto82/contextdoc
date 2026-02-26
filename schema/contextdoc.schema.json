@@ -1,0 +1,81 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://raw.githubusercontent.com/Mauto82/concept-doc/main/schema/contextdoc.schema.json",
+  "title": "ContextDoc",
+  "description": "Lightweight YAML companion file documenting what source code cannot express. All sections are optional — use only what adds value.",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "purpose": {
+      "type": "string",
+      "description": "One line. What this file does, not how."
+    },
+    "tensions": {
+      "type": "array",
+      "description": "The most important section. Architectural decisions that look wrong but are intentional, or constraints that must not be broken without careful reconsideration.",
+      "items": {
+        "type": "string"
+      },
+      "minItems": 1
+    },
+    "workflows": {
+      "type": "object",
+      "description": "Key flows expressed as readable sequences. Only flows that are non-obvious or span multiple components.",
+      "additionalProperties": {
+        "type": "string"
+      }
+    },
+    "todos": {
+      "type": "array",
+      "description": "Pending work in the context of this specific file.",
+      "items": {
+        "type": "string"
+      },
+      "minItems": 1
+    },
+    "conceptualTests": {
+      "type": "array",
+      "description": "Declarative, language-agnostic test scenarios. Describe what the system should do, not how to test it.",
+      "items": {
+        "type": "object",
+        "required": ["name", "steps"],
+        "additionalProperties": false,
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Short name for the test scenario"
+          },
+          "steps": {
+            "type": "array",
+            "description": "Sequence of action/expect pairs",
+            "minItems": 1,
+            "items": {
+              "type": "object",
+              "required": ["action", "expect"],
+              "additionalProperties": false,
+              "properties": {
+                "action": {
+                  "type": "string",
+                  "description": "What the user or system does"
+                },
+                "expect": {
+                  "type": "string",
+                  "description": "The expected outcome"
+                }
+              }
+            }
+          }
+        }
+      },
+      "minItems": 1
+    },
+    "ref": {
+      "type": "array",
+      "description": "Links to external documents for context too large to inline.",
+      "items": {
+        "type": "string"
+      },
+      "minItems": 1
+    }
+  }
+}

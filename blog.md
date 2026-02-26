@@ -63,8 +63,8 @@ ContextDoc da solo non basta. Serve anche dirgli all'agente come comportarsi. CL
 **Punti chiave:**
 - CLAUDE.md: istruzioni operative (leggi il .ctx prima di modificare, non violare le tensioni)
 - `.ctx`: contesto semantico per file
-- Prompt riutilizzabili: generate-tests, review-tensions, sync-cdoc
-- Il workflow completo: modifica → sync-cdoc → genera test → review-tensions
+- Prompt riutilizzabili: generate-tests, review-tensions, sync-ctx
+- Il workflow completo: modifica → sync-ctx → genera test → review-tensions
 
 ---
 
@@ -113,7 +113,7 @@ Un singolo file Python da 250 righe, una dipendenza esterna con un bug, un monke
 Il rischio principale di qualsiasi documentazione parallela è che diventi obsoleta. Strategie pratiche per evitarlo.
 
 **Punti chiave:**
-- Il prompt `sync-cdoc`: dopo ogni modifica significativa
+- Il prompt `sync-ctx`: dopo ogni modifica significativa
 - Git hook: avviso quando `.py` cambia senza toccare `.ctx`
 - Review delle tensioni come parte del code review
 - Il segnale d'allarme: se il `.ctx` non è cambiato in mesi, probabilmente è stale

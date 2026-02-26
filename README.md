@@ -73,6 +73,12 @@ The rename reflects this shift:
 
 1. Check out the [schema specification](./schema/README.md)
 2. Look at the [examples](./examples/) directory
+3. Enable IDE autocomplete by adding to VS Code `settings.json`:
+   ```json
+   "yaml.schemas": {
+     "https://raw.githubusercontent.com/Mauto82/concept-doc/main/schema/contextdoc.schema.json": "**/*.ctx"
+   }
+   ```
 
 ## Using ContextDoc with AI agents
 
