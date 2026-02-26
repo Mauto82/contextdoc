@@ -20,7 +20,7 @@ conceptualTests:
       - action: "load() on a file containing invalid JSON"
         expect: "returns empty list, original file renamed to <path>.bak"
       - action: "load() again after corruption recovery"
-        expect: "returns empty list, no error (file no longer exists)"
+        expect: "returns empty list — original path is gone (renamed to .bak), so os.path.exists() is False and load() returns [] without error"
 
   - name: "Atomic write"
     steps:
