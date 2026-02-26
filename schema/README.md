@@ -175,7 +175,7 @@ It enables **autocomplete and inline documentation** in editors that support the
 Add this comment at the top of any `.ctx` file to activate it:
 
 ```yaml
-# yaml-language-server: $schema=https://raw.githubusercontent.com/Mauto82/concept-doc/main/schema/contextdoc.schema.json
+# yaml-language-server: $schema=https://raw.githubusercontent.com/Mauto82/contextdoc/main/schema/contextdoc.schema.json
 
 purpose: "..."
 tensions:
@@ -186,7 +186,7 @@ Or configure it globally for all `.ctx` files in VS Code (`settings.json`):
 
 ```json
 "yaml.schemas": {
-  "https://raw.githubusercontent.com/Mauto82/concept-doc/main/schema/contextdoc.schema.json": "**/*.ctx"
+  "https://raw.githubusercontent.com/Mauto82/contextdoc/main/schema/contextdoc.schema.json": "**/*.ctx"
 }
 ```
 

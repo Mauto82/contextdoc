@@ -1,6 +1,6 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "https://raw.githubusercontent.com/Mauto82/concept-doc/main/schema/contextdoc.schema.json",
+  "$id": "https://raw.githubusercontent.com/Mauto82/contextdoc/main/schema/contextdoc.schema.json",
   "title": "ContextDoc",
   "description": "Lightweight YAML companion file documenting what source code cannot express. All sections are optional — use only what adds value.",
   "type": "object",

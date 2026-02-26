@@ -76,7 +76,7 @@ The rename reflects this shift:
 3. Enable IDE autocomplete by adding to VS Code `settings.json`:
    ```json
    "yaml.schemas": {
-     "https://raw.githubusercontent.com/Mauto82/concept-doc/main/schema/contextdoc.schema.json": "**/*.ctx"
+     "https://raw.githubusercontent.com/Mauto82/contextdoc/main/schema/contextdoc.schema.json": "**/*.ctx"
    }
    ```
 
