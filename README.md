@@ -59,6 +59,22 @@ conceptualTests:
 1. Check out the [schema specification](./schema/README.md)
 2. Look at the [examples](./examples/) directory
 
+## Using ConceptDoc with AI agents
+
+`.cdoc` files provide per-file context. For the full picture, pair them with two additional elements:
+
+**`CLAUDE.md` (or `.cursorrules`) at the project root** — operational instructions that tell the agent how to behave: read the `.cdoc` before modifying a file, never violate a tension without discussion, use `conceptualTests` as the spec when generating tests.
+
+**Reusable prompts** for recurring operations — see the [`prompts/`](./prompts/) directory:
+
+| Prompt | When to use |
+|---|---|
+| [`generate-tests`](./prompts/generate-tests.md) | Implement `conceptualTests` as real tests in your framework |
+| [`review-tensions`](./prompts/review-tensions.md) | Verify code doesn't violate architectural constraints |
+| [`sync-cdoc`](./prompts/sync-cdoc.md) | After a code change, check if the `.cdoc` needs updating |
+
+See [`examples/project-0/CLAUDE.md`](./examples/project-0/CLAUDE.md) for a concrete example of the full setup.
+
 ## Current State
 
 The project is in **active design phase**. The schema is at v0.2.0.

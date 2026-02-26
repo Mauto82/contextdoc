@@ -154,6 +154,17 @@ ref:
 
 ---
 
+## Operational layer
+
+The schema defines the format of `.cdoc` files. To use them effectively with AI agents, pair them with:
+
+- A `CLAUDE.md` at the project root with operational instructions (when to read `.cdoc`, how to handle tensions, how to generate tests)
+- Reusable prompts for common operations: generating tests from `conceptualTests`, reviewing tensions, syncing `.cdoc` after code changes
+
+See the [`prompts/`](../prompts/) directory and [`examples/project-0/CLAUDE.md`](../examples/project-0/CLAUDE.md) for reference.
+
+---
+
 ## Versioning
 
 ConceptDoc schema version: **0.2.0**
