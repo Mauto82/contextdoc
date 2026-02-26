@@ -75,6 +75,10 @@ conceptualTests:
 
 See [`examples/project-0/CLAUDE.md`](./examples/project-0/CLAUDE.md) for a concrete example of the full setup.
 
+## Real-world examples
+
+- [notebook-lm-downloader](https://github.com/Mauto82/notebook-lm-downloader) — a Python CLI tool for downloading content from NotebookLM. Single-file project: one `.cdoc` with tensions (including a third-party library monkey-patch), workflows, and conceptual tests.
+
 ## Current State
 
 The project is in **active design phase**. The schema is at v0.2.0.

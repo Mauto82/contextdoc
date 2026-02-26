@@ -94,7 +94,20 @@ Con esempi reali dal progetto todo. Cosa mettere, cosa evitare, come scegliere c
 
 ---
 
-## 8. ConceptDoc per team: come mantenerlo in sync con il codice
+## 8. Case study: ConceptDoc su un progetto reale (notebook-lm-downloader)
+
+**Angolo:** Come si applica ConceptDoc a un progetto esistente con git history reale.
+Un singolo file Python da 250 righe, una dipendenza esterna con un bug, un monkey-patch che non si può togliere. Come si documenta tutto questo in 60 righe di YAML, come si integra nella git history in modo pulito, e cosa si guadagna.
+
+**Punti chiave:**
+- La tensione più importante: il monkey-patch su `Notebook.from_api_response` e perché non si tocca
+- Come inserire `.cdoc` e `CLAUDE.md` nella history esistente con rebase (senza sembrare un'aggiunta postuma)
+- Quali commenti nel codice erano ridondanti e quali erano tensioni inline
+- Il valore pratico: cosa cambia nel lavoro quotidiano con un agente AI sul progetto
+
+---
+
+## 9. ConceptDoc per team: come mantenerlo in sync con il codice
 
 **Angolo:** Il problema del "doc che invecchia" e come affrontarlo.
 Il rischio principale di qualsiasi documentazione parallela è che diventi obsoleta. Strategie pratiche per evitarlo.
