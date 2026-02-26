@@ -1,336 +1,44 @@
-{
-  "metadata": {
-    "filename": "todo_service.py",
-    "version": "1.0.0",
-    "lastUpdate": "2025-03-22"
-  },
-  "purpose": "Provides business logic for managing todo items, including creation, retrieval, updates, and persistence",
-  "dependencies": [
-    {
-      "name": "StorageService",
-      "reason": "Handles the persistence of todo items",
-      "usage": "Used to load and save todo items"
-    },
-    {
-      "name": "TodoItem",
-      "reason": "Core domain model",
-      "usage": "Manipulated by all methods in this service"
-    }
-  ],
-  "invariants": [
-    "Todo IDs are unique and never reused",
-    "The internal list of todos is always in sync with the storage service after operations",
-    "Todo titles cannot be empty",
-    "Todo titles cannot exceed 100 characters"
-  ],
-  "businessLogic": {
-    "idAssignment": {
-      "strategy": "Auto-increment",
-      "implementation": "Track the highest existing ID and increment by 1 for new items"
-    },
-    "validation": {
-      "title": {
-        "required": true,
-        "maxLength": 100
-      }
-    },
-    "filters": {
-      "status": ["active", "completed", null]
-    }
-  },
-  "components": [
-    {
-      "name": "TodoService.__init__",
-      "signature": "__init__(storage_service: StorageService)",
-      "description": "Initializes the todo service with a storage provider",
-      "preconditions": [
-        "storage_service must be a valid StorageService instance"
-      ],
-      "postconditions": [
-        "todos list is loaded from storage",
-        "_next_id is calculated based on existing todos"
-      ]
-    },
-    {
-      "name": "TodoService.get_todos",
-      "signature": "get_todos(status: Optional[str] = None) -> List[TodoItem]",
-      "description": "Retrieves todos, optionally filtered by status",
-      "preconditions": [
-        "status must be one of: 'active', 'completed', or None"
-      ],
-      "postconditions": [
-        "Returns a sorted list of TodoItem objects matching the filter"
-      ],
-      "examples": [
-        {
-          "input": {"status": null},
-          "output": "All todos sorted by ID",
-          "description": "Get all todos"
-        },
-        {
-          "input": {"status": "active"},
-          "output": "Only active todos sorted by ID",
-          "description": "Get only active todos"
-        },
-        {
-          "input": {"status": "completed"},
-          "output": "Only completed todos sorted by ID",
-          "description": "Get only completed todos"
-        }
-      ],
-      "errors": [
-        {
-          "condition": "status is not one of the allowed values",
-          "response": "ValueError",
-          "mitigation": "Validate status before calling"
-        }
-      ]
-    },
-    {
-      "name": "TodoService.get_todo",
-      "signature": "get_todo(id: int) -> TodoItem",
-      "description": "Retrieves a specific todo by ID",
-      "preconditions": [
-        "id must be a valid integer"
-      ],
-      "postconditions": [
-        "Returns the TodoItem with the specified ID"
-      ],
-      "errors": [
-        {
-          "condition": "No todo exists with the specified ID",
-          "response": "KeyError",
-          "mitigation": "Check if ID exists before calling"
-        }
-      ]
-    },
-    {
-      "name": "TodoService.create_todo",
-      "signature": "create_todo(title: str) -> TodoItem",
-      "description": "Creates a new todo item",
-      "preconditions": [
-        "title must be a valid string"
-      ],
-      "postconditions": [
-        "A new TodoItem is created with the specified title",
-        "The new TodoItem is added to the todos list",
-        "The todos list is saved to storage",
-        "_next_id is incremented"
-      ],
-      "errors": [
-        {
-          "condition": "title is empty",
-          "response": "ValueError",
-          "mitigation": "Validate title before calling"
-        },
-        {
-          "condition": "title exceeds 100 characters",
-          "response": "ValueError",
-          "mitigation": "Validate title length before calling"
-        }
-      ]
-    },
-    {
-      "name": "TodoService.update_todo",
-      "signature": "update_todo(id: int, title: str) -> TodoItem",
-      "description": "Updates an existing todo's title",
-      "preconditions": [
-        "id must correspond to an existing todo",
-        "title must be a valid string"
-      ],
-      "postconditions": [
-        "The TodoItem with the specified ID has its title updated",
-        "The todos list is saved to storage"
-      ],
-      "errors": [
-        {
-          "condition": "No todo exists with the specified ID",
-          "response": "KeyError",
-          "mitigation": "Check if ID exists before calling"
-        },
-        {
-          "condition": "title is empty",
-          "response": "ValueError",
-          "mitigation": "Validate title before calling"
-        },
-        {
-          "condition": "title exceeds 100 characters",
-          "response": "ValueError",
-          "mitigation": "Validate title length before calling"
-        }
-      ]
-    },
-    {
-      "name": "TodoService.complete_todo",
-      "signature": "complete_todo(id: int) -> TodoItem",
-      "description": "Marks a todo as complete",
-      "preconditions": [
-        "id must correspond to an existing todo"
-      ],
-      "postconditions": [
-        "The TodoItem with the specified ID is marked as completed",
-        "The todos list is saved to storage"
-      ],
-      "errors": [
-        {
-          "condition": "No todo exists with the specified ID",
-          "response": "KeyError",
-          "mitigation": "Check if ID exists before calling"
-        }
-      ]
-    },
-    {
-      "name": "TodoService.reactivate_todo",
-      "signature": "reactivate_todo(id: int) -> TodoItem",
-      "description": "Marks a completed todo as active",
-      "preconditions": [
-        "id must correspond to an existing todo"
-      ],
-      "postconditions": [
-        "The TodoItem with the specified ID is marked as active",
-        "The todos list is saved to storage"
-      ],
-      "errors": [
-        {
-          "condition": "No todo exists with the specified ID",
-          "response": "KeyError",
-          "mitigation": "Check if ID exists before calling"
-        }
-      ]
-    },
-    {
-      "name": "TodoService.delete_todo",
-      "signature": "delete_todo(id: int) -> None",
-      "description": "Deletes a todo",
-      "preconditions": [
-        "id must correspond to an existing todo"
-      ],
-      "postconditions": [
-        "The TodoItem with the specified ID is removed from the todos list",
-        "The todos list is saved to storage"
-      ],
-      "errors": [
-        {
-          "condition": "No todo exists with the specified ID",
-          "response": "KeyError",
-          "mitigation": "Check if ID exists before calling"
-        }
-      ]
-    }
-  ],
-  "testFixtures": [
-    {
-      "name": "empty_service",
-      "description": "Service with no todos",
-      "data": {
-        "todos": [],
-        "_next_id": 1
-      }
-    },
-    {
-      "name": "populated_service",
-      "description": "Service with sample todos",
-      "data": {
-        "todos": [
-          {
-            "id": 1,
-            "title": "Buy groceries",
-            "is_completed": false,
-            "created_at": "2025-03-22T10:00:00",
-            "completed_at": null
-          },
-          {
-            "id": 2,
-            "title": "Call mom",
-            "is_completed": true,
-            "created_at": "2025-03-22T09:00:00",
-            "completed_at": "2025-03-22T11:30:00"
-          },
-          {
-            "id": 3,
-            "title": "Finish project",
-            "is_completed": false,
-            "created_at": "2025-03-22T12:00:00",
-            "completed_at": null
-          }
-        ],
-        "_next_id": 4
-      }
-    }
-  ],
-  "conceptualTests": [
-    {
-      "name": "Todo CRUD operations",
-      "steps": [
-        {
-          "action": "Initialize TodoService with empty storage",
-          "expect": "TodoService instance with empty todos list and _next_id = 1"
-        },
-        {
-          "action": "create_todo('Test todo')",
-          "expect": "New TodoItem with id=1, title='Test todo', is_completed=False"
-        },
-        {
-          "action": "get_todo(1)",
-          "expect": "Returns the TodoItem with id=1"
-        },
-        {
-          "action": "update_todo(1, 'Updated todo')",
-          "expect": "TodoItem with id=1 has title='Updated todo'"
-        },
-        {
-          "action": "complete_todo(1)",
-          "expect": "TodoItem with id=1 has is_completed=True and completed_at set"
-        },
-        {
-          "action": "reactivate_todo(1)",
-          "expect": "TodoItem with id=1 has is_completed=False and completed_at=None"
-        },
-        {
-          "action": "delete_todo(1)",
-          "expect": "TodoItem with id=1 is removed from todos list"
-        },
-        {
-          "action": "get_todo(1)",
-          "expect": "KeyError is raised"
-        }
-      ]
-    },
-    {
-      "name": "Todo filtering",
-      "steps": [
-        {
-          "action": "Initialize TodoService with multiple todos of mixed status",
-          "expect": "TodoService instance with todos list containing active and completed items"
-        },
-        {
-          "action": "get_todos()",
-          "expect": "Returns all todos sorted by ID"
-        },
-        {
-          "action": "get_todos(status='active')",
-          "expect": "Returns only todos with is_completed=False, sorted by ID"
-        },
-        {
-          "action": "get_todos(status='completed')",
-          "expect": "Returns only todos with is_completed=True, sorted by ID"
-        },
-        {
-          "action": "get_todos(status='invalid')",
-          "expect": "ValueError is raised"
-        }
-      ]
-    }
-  ],
-  "aiNotes": {
-    "generationTips": [
-      "When implementing or extending TodoService, ensure all operations that modify todos also update the storage",
-      "Always validate inputs according to the business rules before processing",
-      "Remember to handle the case where a todo ID doesn't exist with appropriate error handling"
-    ],
-    "commonPatterns": [
-      "The service follows a Repository pattern for todo management",
-      "CRUD operations all follow a consistent pattern of validation, modification, and persistence"
-    ]
-  }
-}
+purpose: "Business logic layer for todo management"
+
+tensions:
+  - "IDs are never reused — _next_id only goes up, even after deletions. Audit consistency depends on this"
+  - "_next_id is derived from max(existing ids) at load time, not stored — avoids state drift but means a fresh load always recalculates"
+  - "reactivate_todo() is implemented but not exposed in the CLI — kept for future use, do not remove"
+  - "Storage is saved after every mutation — no explicit flush/commit needed, and no batching"
+  - "Title max 100 chars is a domain constraint, not a DB limit — enforced here, not in StorageService"
+
+workflows:
+  create: "validate title (not empty, max 100) → build TodoItem with _next_id → append → save → increment _next_id"
+  delete: "get_todo (raises KeyError if missing) → remove from list → save"
+  complete: "get_todo → TodoItem.complete() → save"
+
+conceptualTests:
+  - name: "ID assignment"
+    steps:
+      - action: "create two todos, delete the first, create a third"
+        expect: "third todo has id=3, not id=1 — IDs are never reused"
+
+  - name: "Validation"
+    steps:
+      - action: "create_todo with empty string"
+        expect: "ValueError raised, no todo created, storage unchanged"
+      - action: "create_todo with title of exactly 100 chars"
+        expect: "todo created successfully"
+      - action: "create_todo with title of 101 chars"
+        expect: "ValueError raised"
+
+  - name: "Filtering"
+    steps:
+      - action: "get_todos() with mixed active and completed items"
+        expect: "all todos returned, sorted by id ascending"
+      - action: "get_todos(status='active')"
+        expect: "only items where is_completed is False, sorted by id"
+      - action: "get_todos(status='completed')"
+        expect: "only items where is_completed is True, sorted by id"
+      - action: "get_todos(status='invalid')"
+        expect: "ValueError raised"
+
+  - name: "Non-existent ID"
+    steps:
+      - action: "get_todo, complete_todo, update_todo, delete_todo with id that doesn't exist"
+        expect: "KeyError raised in all cases, storage unchanged"

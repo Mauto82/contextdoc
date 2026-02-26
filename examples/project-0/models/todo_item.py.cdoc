@@ -1,0 +1,27 @@
+purpose: "Domain model for a single todo item"
+
+tensions:
+  - "complete() and reactivate() are idempotent — calling them twice has no effect, by design"
+  - "completed_at is reset to None on reactivate() — completion history is not preserved"
+  - "to_dict/from_dict exist exclusively for JSON serialization via StorageService, not for general use"
+
+conceptualTests:
+  - name: "State transitions"
+    steps:
+      - action: "create TodoItem with title and id"
+        expect: "is_completed is False, completed_at is None"
+      - action: "call complete()"
+        expect: "is_completed is True, completed_at is set to current time"
+      - action: "call complete() again on already-completed item"
+        expect: "no change — idempotent"
+      - action: "call reactivate()"
+        expect: "is_completed is False, completed_at is None"
+      - action: "call reactivate() again on already-active item"
+        expect: "no change — idempotent"
+
+  - name: "Serialization roundtrip"
+    steps:
+      - action: "create TodoItem, call to_dict()"
+        expect: "dict contains id, title, is_completed, created_at (ISO string), completed_at"
+      - action: "pass dict to from_dict()"
+        expect: "TodoItem is equal to the original, dates are datetime objects"
