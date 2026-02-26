@@ -105,15 +105,30 @@ bash /path/to/concept-doc/hooks/install.sh
 
 The hook warns but never blocks commits — consistent with ContextDoc's non-binding philosophy.
 
+**`ctx-run`** — LLM-powered runner for `conceptualTests`. Reads `.ctx` files, sends source code + scenarios to an LLM, reports pass/fail per step. Supports Anthropic, OpenAI, and Ollama via [LiteLLM](https://github.com/BerriAI/litellm) — see the [`tools/ctx-run/`](./tools/ctx-run/) directory:
+
+```bash
+pip install -r tools/ctx-run/requirements.txt
+
+# Run against a single file or a whole directory
+python tools/ctx-run/ctx_run.py run examples/project-1/auth.py.ctx --model ollama/llama3
+python tools/ctx-run/ctx_run.py run examples/ --model claude-haiku-20240307
+```
+
 ## Real-world examples
 
 - [notebook-lm-downloader](https://github.com/Mauto82/notebook-lm-downloader) — a Python CLI tool for downloading content from NotebookLM. Single-file project: one `.ctx` with tensions (including a third-party library monkey-patch), workflows, and conceptual tests.
 
 ## Current State
 
-The project is in **active design phase**. The schema is at v0.2.0.
+The project is at **v0.3.0**.
 
-Contributions welcome — especially: real-world examples, feedback on the schema, and tooling ideas (linters, IDE plugins, git hooks to flag stale `.ctx` files).
+- Schema: v0.3.0 — YAML, all sections optional, IDE autocomplete via JSON Schema
+- Examples: two reference projects (`project-0` CLI, `project-1` FastAPI)
+- Tools: `ctx-run` — LLM-powered conceptual test runner (Anthropic / OpenAI / Ollama)
+- Real-world: [notebook-lm-downloader](https://github.com/Mauto82/notebook-lm-downloader)
+
+Contributions welcome — especially: real-world examples, feedback on the schema, and tooling ideas (linters, IDE plugins, CI integrations).
 
 ## License
 

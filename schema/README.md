@@ -196,4 +196,4 @@ The schema is intentionally permissive: all sections are optional, no fields are
 
 ## Versioning
 
-ContextDoc schema version: **0.2.0**
+ContextDoc schema version: **0.3.0**

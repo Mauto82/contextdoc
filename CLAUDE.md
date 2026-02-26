@@ -3,9 +3,10 @@
 ## What this project is
 
 ContextDoc is a documentation standard. The main deliverables are:
-- `schema/README.md` — the schema spec (current version: 0.2.0)
+- `schema/README.md` — the schema spec (current version: 0.3.0)
 - `README.md` — the project overview and philosophy
 - `examples/` — reference implementations showing the standard in practice
+- `tools/ctx-run/` — LLM-powered runner for `conceptualTests` (multi-provider via LiteLLM)
 
 ## Schema principles (don't drift from these)
 
@@ -29,6 +30,13 @@ ContextDoc is a documentation standard. The main deliverables are:
 - Every `.py` file must have a corresponding `.ctx`
 - Include a `CLAUDE.md` in the example project — it demonstrates how ContextDoc and operational instructions work together
 - Include a `README.md` explaining the example
+
+## When modifying tools/ctx-run/
+
+- `ctx_run.py` must have a corresponding `ctx_run.py.ctx` — keep it in sync
+- The tool must remain provider-agnostic (no hardcoded Anthropic-only logic)
+- Do not add a `--temperature` flag — determinism at 0 is intentional
+- Keep the tool as a single file (`ctx_run.py`); split only if it exceeds ~500 lines
 
 ## What not to do
 
