@@ -1,0 +1,37 @@
+purpose: "Coupon model — discount calculation and pre-application validation"
+
+tensions:
+  - "apply_discount() and validate() are separate — apply_discount() does the math, validate() checks guards; callers are responsible for calling validate() first. This separation makes unit-testing the math and the guards independently possible"
+  - "Discount is floored at 0.0, never negative — a $60-off coupon on a $50 order returns 0.0, not -10.0"
+  - "used_count is stored on the Coupon object — the caller (Cart.checkout) is responsible for incrementing it after a successful checkout. Coupon.validate() reads it but does not modify it"
+  - "expires_at is a naive UTC datetime — callers must pass naive UTC values (not local time, not timezone-aware). The internal _utcnow() helper normalises the comparison to naive UTC"
+
+conceptualTests:
+  - name: "Percentage discount"
+    steps:
+      - action: "call apply_discount(100.0) on a 20% coupon"
+        expect: "returns 80.0"
+      - action: "call apply_discount(100.0) on a 100% coupon"
+        expect: "returns 0.0"
+      - action: "call apply_discount(50.0) on a 200% coupon"
+        expect: "returns 0.0 — floored at zero, not negative"
+
+  - name: "Fixed discount"
+    steps:
+      - action: "call apply_discount(50.0) on a $15 fixed coupon"
+        expect: "returns 35.0"
+      - action: "call apply_discount(10.0) on a $60 fixed coupon"
+        expect: "returns 0.0 — floored at zero"
+
+  - name: "Validation guards"
+    steps:
+      - action: "call validate() on a coupon with active=False"
+        expect: "raises ValueError"
+      - action: "call validate() on a coupon with max_uses=2, used_count=2"
+        expect: "raises ValueError: usage limit"
+      - action: "call validate() on a coupon with min_order_amount=50.0, order_total=30.0"
+        expect: "raises ValueError: minimum order"
+      - action: "call validate() on a coupon with expires_at 1 hour in the past"
+        expect: "raises ValueError: expired"
+      - action: "call validate() on a coupon with max_uses=None (unlimited) and used_count=999"
+        expect: "does not raise — unlimited coupons are never exhausted"

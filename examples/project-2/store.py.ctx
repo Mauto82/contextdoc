@@ -1,0 +1,40 @@
+purpose: "Shopping cart — item accumulation, coupon attachment, and checkout total"
+
+tensions:
+  - "Cart holds a single coupon slot — only one coupon per checkout; calling apply_coupon() twice replaces the first. This is a deliberate product constraint, not a bug to fix"
+  - "checkout() does not persist state — it is a pure read: compute subtotal, apply discount if coupon present, return total. The caller (order service, not yet implemented) is responsible for recording the transaction"
+  - "used_count must be incremented by checkout(), not by apply_coupon() — a coupon is attached at cart build time but the usage should only be counted when the customer actually pays"
+
+todos:
+  - "Wire coupon.validate(self.subtotal) into apply_coupon() so exhausted, expired, and under-minimum coupons are rejected at attachment time"
+  - "Increment coupon.used_count inside checkout() after the discount is applied"
+  - "Add remove_coupon() method for cart editing flows"
+
+conceptualTests:
+  - name: "Basic cart and checkout"
+    steps:
+      - action: "add two items: $30 + $20, check subtotal"
+        expect: "subtotal = 50.0"
+      - action: "apply a 10% coupon, call checkout()"
+        expect: "returns 45.0"
+      - action: "call checkout() with no coupon attached"
+        expect: "returns the subtotal unchanged"
+
+  - name: "Coupon validation enforced on apply"
+    steps:
+      - action: "create a coupon with max_uses=1, use it once (used_count becomes 1)"
+        expect: "first checkout succeeds"
+      - action: "try to apply the exhausted coupon to a new cart via apply_coupon()"
+        expect: "raises ValueError: usage limit exceeded"
+
+  - name: "used_count incremented after checkout"
+    steps:
+      - action: "create a coupon with max_uses=3, used_count=0; apply to cart and call checkout()"
+        expect: "coupon.used_count is 1 after checkout"
+      - action: "call checkout() again on a second cart with the same coupon"
+        expect: "coupon.used_count is 2"
+
+  - name: "Minimum order enforced on apply"
+    steps:
+      - action: "create a coupon with min_order_amount=50.0; build a cart with subtotal $30; call apply_coupon()"
+        expect: "raises ValueError: order does not meet minimum"
