@@ -160,8 +160,9 @@ The schema defines the format of `.cdoc` files. To use them effectively with AI 
 
 - A `CLAUDE.md` at the project root with operational instructions (when to read `.cdoc`, how to handle tensions, how to generate tests)
 - Reusable prompts for common operations: generating tests from `conceptualTests`, reviewing tensions, syncing `.cdoc` after code changes
+- A git pre-commit hook that warns when source files are modified without updating their `.cdoc` companion
 
-See the [`prompts/`](../prompts/) directory and [`examples/project-0/CLAUDE.md`](../examples/project-0/CLAUDE.md) for reference.
+See the [`prompts/`](../prompts/) directory, [`hooks/`](../hooks/) directory, and [`examples/project-0/CLAUDE.md`](../examples/project-0/CLAUDE.md) for reference.
 
 ---
 

@@ -75,6 +75,15 @@ conceptualTests:
 
 See [`examples/project-0/CLAUDE.md`](./examples/project-0/CLAUDE.md) for a concrete example of the full setup.
 
+**Git hook** to warn when source files are committed without updating their `.cdoc` — see the [`hooks/`](./hooks/) directory:
+
+```bash
+# Install in your project
+bash /path/to/concept-doc/hooks/install.sh
+```
+
+The hook warns but never blocks commits — consistent with ConceptDoc's non-binding philosophy.
+
 ## Real-world examples
 
 - [notebook-lm-downloader](https://github.com/Mauto82/notebook-lm-downloader) — a Python CLI tool for downloading content from NotebookLM. Single-file project: one `.cdoc` with tensions (including a third-party library monkey-patch), workflows, and conceptual tests.
