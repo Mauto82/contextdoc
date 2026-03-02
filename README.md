@@ -83,9 +83,23 @@ The rename reflects this shift:
 
 ## Using ContextDoc with AI agents
 
-`.ctx` files provide per-file context. For the full picture, pair them with two additional elements:
+`.ctx` files provide per-file context. For the full picture, pair them with three additional elements:
 
-**`CLAUDE.md` (or `.cursorrules`) at the project root** — operational instructions that tell the agent how to behave: read the `.ctx` before modifying a file, never violate a tension without discussion, use `conceptualTests` as the spec when generating tests.
+**`project.ctx` at the project root** — project-level context in the same YAML format. Captures cross-cutting architectural decisions, project-scope workflows, and high-level conceptual tests. Unlike `CLAUDE.md`, it is tool-agnostic: any agent or developer reading the repo cold gets the same constraints regardless of IDE or model.
+
+```yaml
+# project.ctx
+purpose: "FastAPI user management service"
+
+tensions:
+  - "Soft delete is a project-wide constraint — no hard deletes anywhere; all new resource types must follow the same pattern"
+  - "Authentication is stateless JWT — no shared session store; horizontal scaling works without sticky sessions"
+
+workflows:
+  agent_reads: "read project.ctx (cross-cutting constraints) → read file.ctx for target file → respect tensions"
+```
+
+**`CLAUDE.md` (or `.cursorrules`) at the project root** — operational instructions that tell the agent *how to behave*: read the `.ctx` before modifying a file, never violate a tension without discussion, use `conceptualTests` as the spec when generating tests. Separate from context: `project.ctx` says what the system is; `CLAUDE.md` says how to work with it.
 
 **Reusable prompts** for recurring operations — see the [`prompts/`](./prompts/) directory:
 
@@ -116,6 +130,18 @@ python tools/ctx-run/ctx_run.py run examples/project-1/auth.py.ctx --model ollam
 python tools/ctx-run/ctx_run.py run examples/ --model claude-haiku-20240307
 ```
 
+**`ctx-watch`** — file watcher that warns when source files change without their `.ctx` companion being updated. Catches drift earlier than the git hook — at save time, not commit time. See the [`tools/ctx-watch/`](./tools/ctx-watch/) directory:
+
+```bash
+pip install -r tools/ctx-watch/requirements.txt
+
+# Watch a directory (blocking, Ctrl+C to stop)
+python tools/ctx-watch/ctx_watch.py watch . --grace 300
+
+# One-shot scan of recently modified files without .ctx updates
+python tools/ctx-watch/ctx_watch.py status . --since 3600
+```
+
 ## Real-world examples
 
 - [notebook-lm-downloader](https://github.com/Mauto82/notebook-lm-downloader) — a Python CLI tool for downloading content from NotebookLM. Single-file project: one `.ctx` with tensions (including a third-party library monkey-patch), workflows, and conceptual tests.
@@ -124,9 +150,9 @@ python tools/ctx-run/ctx_run.py run examples/ --model claude-haiku-20240307
 
 The project is at **v0.3.0**.
 
-- Schema: v0.3.0 — YAML, all sections optional, IDE autocomplete via JSON Schema
-- Examples: three reference projects (`project-0` CLI, `project-1` FastAPI async, `project-2` TDD demo with intentional failures)
-- Tools: `ctx-run` — LLM-powered conceptual test runner (Anthropic / OpenAI / Ollama)
+- Schema: v0.3.0 — YAML, all sections optional, IDE autocomplete via JSON Schema; `project.ctx` convention for project-level context
+- Examples: three reference projects (`project-0` CLI, `project-1` FastAPI async, `project-2` TDD demo with intentional failures), each with a `project.ctx`
+- Tools: `ctx-run` — LLM-powered conceptual test runner (Anthropic / OpenAI / Ollama); `ctx-watch` — real-time drift detector
 - Real-world: [notebook-lm-downloader](https://github.com/Mauto82/notebook-lm-downloader)
 
 Contributions welcome — especially: real-world examples, feedback on the schema, and tooling ideas (linters, IDE plugins, CI integrations).
