@@ -1,0 +1,26 @@
+purpose: "Lightweight documentation standard that captures architectural context AI agents and new developers cannot infer from source code alone"
+
+tensions:
+  - "All sections are optional and non-binding — adding mandatory fields or runtime validation would contradict the core philosophy; ContextDoc is documentation, not configuration"
+  - "ctx-run must remain provider-agnostic — no hardcoded Anthropic-only logic; LiteLLM handles routing via model string convention (ollama/x, gpt-x, claude-x)"
+  - "project.ctx and file-level .ctx serve different scopes — project.ctx captures cross-cutting constraints; file .ctx captures file-specific context; they must not duplicate each other"
+  - "Operational instructions (CLAUDE.md, .cursorrules) are separate from context (.ctx) — directives tell agents how to behave; context tells them what the system is; both are needed, neither replaces the other"
+  - "A .ctx file should never exceed ~60 lines — the schema enforces no limit but the principle does; if a file needs more, the documentation is probably over-specified"
+
+workflows:
+  adoption: "add project.ctx at root → identify highest-risk file → add file.ctx with tensions → add conceptualTests → install git hook → optionally run ctx-run"
+  agent_reads: "read project.ctx (cross-cutting constraints) → read file.ctx for target file → respect tensions → use conceptualTests as the spec"
+
+conceptualTests:
+  - name: "Minimal valid .ctx"
+    steps:
+      - action: "create a .ctx file with only a purpose line"
+        expect: "valid ContextDoc — schema accepts it, no sections are required"
+  - name: "project.ctx scope separation"
+    steps:
+      - action: "read project.ctx and any file.ctx in the same repo"
+        expect: "no duplication — project.ctx has cross-cutting tensions, file.ctx has file-specific ones"
+  - name: "ctx-run on project.ctx"
+    steps:
+      - action: "run ctx-run against project.ctx"
+        expect: "conceptualTests are evaluated like any other .ctx file — no special handling needed"

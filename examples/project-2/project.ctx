@@ -1,0 +1,10 @@
+purpose: "Coupon service demonstrating ContextDoc as a TDD specification — ctx-run reports failing tests as the implementation backlog, not as errors"
+
+tensions:
+  - "coupon.py is intentionally complete, store.py is intentionally partial — this is a demo of ctx-run as a TDD tool; do not implement the missing store.py methods to make all tests pass"
+  - "The failing conceptualTests in store.py.ctx are the spec, not bugs — they describe exactly what needs to be built; a developer onboarding here should read them before touching store.py"
+  - "ctx-run exit code 1 on this project is expected and correct — partial green/red output is the intended demonstration; a fully-passing run would defeat the purpose of the example"
+
+workflows:
+  tdd_demo: "run ctx-run → red on store.py scenarios (used_count, validation) → read store.py.ctx todos → implement the two missing methods → run ctx-run → green"
+  reading_order: "read project.ctx → read coupon.py.ctx (complete spec) → read store.py.ctx (partial spec + todos) → read source files"

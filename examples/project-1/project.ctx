@@ -1,0 +1,12 @@
+purpose: "FastAPI async user management API demonstrating ContextDoc on a multi-file project with security-sensitive architectural constraints"
+
+tensions:
+  - "Authentication is stateless JWT — no shared session store, no revocation list; horizontal scaling works without sticky sessions, but a compromised token stays valid until expiry"
+  - "Soft delete is a project-wide constraint — no hard deletes anywhere in this codebase; any new resource type must implement is_deleted and follow the same pattern"
+  - "Email is an immutable external identifier — downstream systems (not yet implemented) assume email never changes; adding an update-email endpoint would break referential integrity in those systems"
+  - "SQLite is the example database — pool_size and max_overflow are already set for PostgreSQL; switching requires only a connection string change, no code changes"
+  - "is_active defaults to False for all new users — the security model requires explicit activation before login; this default must not change without implementing the full activation flow"
+
+workflows:
+  security_chain: "register (is_active=False) → [email verification, not yet implemented] → activate (is_active=True) → login → JWT issued → protected endpoint access"
+  delete_flow: "DELETE /users/{id} → set is_deleted=True → user invisible to queries but row preserved — never use hard delete"

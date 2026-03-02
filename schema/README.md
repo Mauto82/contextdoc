@@ -144,6 +144,32 @@ ref:
 
 ---
 
+### `project.ctx`
+
+A special convention for project-level context. A file named `project.ctx` at the project root uses the same schema as file-level companions but captures cross-cutting concerns: architectural decisions that span the whole codebase, adoption workflows, and project-scope tests.
+
+**Scope rules:**
+- `project.ctx` → cross-cutting tensions and workflows that affect the whole project
+- `file.ctx` → constraints and intent specific to that file
+- They must not duplicate each other
+
+```yaml
+# project.ctx — lives at the project root
+purpose: "FastAPI user management service"
+
+tensions:
+  - "Soft delete is a project-wide constraint — no hard deletes anywhere; all new resource types must follow the same pattern"
+  - "Authentication is stateless JWT — no shared session store; horizontal scaling is possible without a sticky session layer"
+
+workflows:
+  adoption: "add project.ctx at root → add file.ctx for highest-risk files → install git hook"
+  agent_reads: "read project.ctx (cross-cutting constraints) → read file.ctx for target file → respect tensions"
+```
+
+`project.ctx` is readable by any tool that processes `.ctx` files — including `ctx-run` — without special handling. It is not required: projects that lack cross-cutting concerns worth documenting can skip it.
+
+---
+
 ## What NOT to put in a `.ctx`
 
 - Method signatures and parameters (readable from the code)

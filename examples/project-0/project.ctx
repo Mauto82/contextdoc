@@ -1,0 +1,11 @@
+purpose: "CLI todo manager demonstrating ContextDoc on a single-file Python project with no external dependencies"
+
+tensions:
+  - "No external runtime dependencies by design — StorageService uses only stdlib (json, os, pathlib); avoid adding libraries for features that the standard library already covers"
+  - "In-memory state is owned by TodoService, not by todo_app.py — the CLI layer is intentionally stateless; do not cache todos in the application entry point"
+  - "Docker is provided for portability, not as a production deployment model — the app writes to a local JSON file; a container running this is ephemeral unless the data directory is mounted"
+  - "ID sequencing is a domain invariant, not a storage detail — IDs are derived at load time from max(existing ids) and never reused; this constraint lives in TodoService and must not move to StorageService"
+
+workflows:
+  request_flow: "todo_app.py parses command → delegates to TodoService → TodoService mutates state and calls StorageService.save() → returns result to CLI for display"
+  startup: "TodoService.__init__ → StorageService.load() → populate in-memory list → _next_id = max(ids) + 1 (or 1 if empty)"
