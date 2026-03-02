@@ -56,13 +56,19 @@ class ChangeTracker:
         self.grace_period = grace_period
         self._source_changes: dict[str, float] = {}   # path -> monotonic time
         self._ctx_updated: set[str] = set()            # source paths with updated .ctx
+        self._intents: set[str] = set()                # source paths with .ctx but no source yet
 
     def record_source(self, path: str) -> None:
         self._source_changes[path] = time.monotonic()
         self._ctx_updated.discard(path)
+        self._intents.discard(path)        # source was created: clear any pending intent
 
     def record_ctx(self, source_path: str) -> None:
         self._ctx_updated.add(source_path)
+
+    def record_intent(self, source_path: str) -> None:
+        """Called when a .ctx is saved but its source file does not exist."""
+        self._intents.add(source_path)
 
     def changed_at(self, path: str) -> float:
         return self._source_changes.get(path, -1.0)
@@ -74,6 +80,14 @@ class ChangeTracker:
             elapsed = now - changed_at
             if elapsed >= self.grace_period and path not in self._ctx_updated:
                 yield path, elapsed
+
+    def intent_files(self):
+        """Yield source paths where a .ctx spec exists but the source has not been created."""
+        for path in list(self._intents):
+            if Path(path).exists():
+                self._intents.discard(path)   # source appeared in the meantime
+            else:
+                yield path
 
 
 # ── watchdog handler ──────────────────────────────────────────────────────────
@@ -100,6 +114,8 @@ class CtxWatchHandler(FileSystemEventHandler):
         if name.endswith(".ctx"):
             source = path.parent / name[:-4]   # strip trailing .ctx
             self.tracker.record_ctx(str(source))
+            if not source.exists():
+                self.tracker.record_intent(str(source))
             return
         ext = path.suffix.lstrip(".")
         if ext in self.extensions:
@@ -158,6 +174,7 @@ def watch(path: str, grace: int, ext: str | None, ignore_dir: tuple[str, ...], n
     # Maps source_path -> monotonic time when last reported.
     # A file re-triggers if its source was modified after the last report.
     reported: dict[str, float] = {}
+    intent_reported: set[str] = set()
 
     try:
         while True:
@@ -173,14 +190,27 @@ def watch(path: str, grace: int, ext: str | None, ignore_dir: tuple[str, ...], n
                 else:
                     detail = f"{source_path}.ctx does not exist"
                 click.echo(f"[{_timestamp()}] {c.y}⚠{c.rst}  {source_path} — {detail}")
+            for source_path in tracker.intent_files():
+                if source_path in intent_reported:
+                    continue
+                intent_reported.add(source_path)
+                click.echo(
+                    f"[{_timestamp()}] {c.c}→{c.rst}  {source_path} — "
+                    f".ctx spec exists, source not yet implemented"
+                )
     except KeyboardInterrupt:
         observer.stop()
     observer.join()
 
     still_drifting = sum(1 for _ in tracker.drift_files())
+    still_intent = sum(1 for _ in tracker.intent_files())
+    parts = []
     if still_drifting:
-        noun = "1 file" if still_drifting == 1 else f"{still_drifting} files"
-        click.echo(f"\n{c.y}ctx-watch: stopped. {noun} with stale context.{c.rst}")
+        parts.append(f"{still_drifting} file(s) with stale context")
+    if still_intent:
+        parts.append(f"{still_intent} spec(s) without implementation")
+    if parts:
+        click.echo(f"\n{c.y}ctx-watch: stopped. {', '.join(parts)}.{c.rst}")
     else:
         click.echo(f"\n{c.g}ctx-watch: stopped. All .ctx companions up to date.{c.rst}")
 
@@ -196,6 +226,8 @@ def watch(path: str, grace: int, ext: str | None, ignore_dir: tuple[str, ...], n
               help="Comma-separated extensions to check.")
 @click.option("--ignore-dir", multiple=True, metavar="DIR",
               help="Additional directory name to skip (repeatable).")
+@click.option("--reverse", is_flag=True,
+              help="Intent-first mode: find .ctx specs without a corresponding source file.")
 @click.option("--no-color", is_flag=True, help="Disable ANSI color output.")
 def status(
     path: str,
@@ -203,6 +235,7 @@ def status(
     changed_files: str | None,
     ext: str | None,
     ignore_dir: tuple[str, ...],
+    reverse: bool,
     no_color: bool,
 ) -> None:
     """One-shot scan of PATH for source files modified without a .ctx update."""
@@ -211,6 +244,37 @@ def status(
     c = _C(no_color)
     root = Path(path).resolve()
     drift: list[tuple[Path, str]] = []
+
+    if reverse:
+        # Intent-first mode: find .ctx specs with missing or lagging source
+        for dirpath, dirnames, filenames in os.walk(root):
+            dirnames[:] = [d for d in dirnames if d not in skip_dirs]
+            for fname in filenames:
+                if not fname.endswith(".ctx"):
+                    continue
+                source_name = fname[:-4]                           # e.g. "auth.py"
+                source_ext = Path(source_name).suffix.lstrip(".")  # e.g. "py"
+                if source_ext not in extensions:
+                    continue                                        # skip project.ctx etc.
+                ctx_path = Path(dirpath) / fname
+                source = ctx_path.parent / source_name
+                try:
+                    ctx_mtime = ctx_path.stat().st_mtime
+                except OSError:
+                    continue
+                if not source.exists():
+                    drift.append((source, "source file does not exist"))
+                elif source.stat().st_mtime < ctx_mtime:
+                    lead = ctx_mtime - source.stat().st_mtime
+                    drift.append((source, f"spec is {_fmt_elapsed(lead)} ahead of source"))
+        if not drift:
+            click.echo(f"{c.g}✓{c.rst}  No unimplemented specs found.")
+            sys.exit(0)
+        click.echo(f"{c.c}{len(drift)} spec(s) without implementation:{c.rst}")
+        for fpath, reason in sorted(drift):
+            rel = fpath.relative_to(root) if fpath.is_relative_to(root) else fpath
+            click.echo(f"  {c.c}→{c.rst}  {rel}  ({reason})")
+        sys.exit(1)
 
     if changed_files is not None:
         # CI mode: check an explicit file list, no mtime filter

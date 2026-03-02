@@ -8,9 +8,13 @@ tensions:
   - "no persistent log — drift state is in-memory only; restarting ctx-watch resets all tracking"
   - "--changed-files bypasses the mtime/since filter entirely — in CI, fresh clones have unreliable mtimes; the file list from git diff is the only reliable source of truth"
   - "--ignore-dir extends SKIP_DIRS without replacing it — builtin skip dirs are always active; custom dirs are additive"
+  - "--reverse identifies specs without source by stripping .ctx suffix and checking extension — project.ctx has no recognized extension before .ctx so it is correctly skipped"
+  - "intent_files() checks Path.exists() on each yield — source may appear between watch cycles; no explicit 'source created' event needed to clear the intent"
 
 workflows:
-  watch: "Observer.start() → sleep(5) loop → drift_files() → for each new drift: compare changed_at vs last reported → print warning → KeyboardInterrupt → Observer.stop() → summary"
+  watch_drift: "Observer.start() → sleep(5) loop → drift_files() → for each new drift: compare changed_at vs last reported → print ⚠ warning"
+  watch_intent: "same loop → intent_files() → for each unimplemented spec: print → signal → KeyboardInterrupt → Observer.stop() → summary"
   status_mtime: "os.walk(root, skip_dirs) → filter by extension and mtime cutoff → compare source mtime vs ctx mtime → print drift list → exit 1 if any drift"
   status_ci: "--changed-files splits input → for each matching source file → compare mtime vs ctx mtime → print drift list → exit 1 if any drift"
-  ctx_detected: "on_modified/on_created for *.ctx → resolve source path (strip .ctx suffix) → tracker.record_ctx(source)"
+  status_reverse: "--reverse walks .ctx files → strips .ctx suffix → checks extension filter → reports missing or lagging source → exit 1 if any"
+  ctx_detected: "on_modified/on_created for *.ctx → record_ctx(source) → if source missing: record_intent(source)"
