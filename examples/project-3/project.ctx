@@ -1,0 +1,9 @@
+purpose: "Notification service demonstrating intent-first development with ContextDoc — spec written before implementation"
+
+tensions:
+  - "notification_service.py intentionally does not exist — this is a demo of the intent-first workflow, not an incomplete project; do not create a stub just to make tooling happy"
+  - "The conceptualTests in notification_service.py.ctx are the implementation contract — implement exactly what they describe, nothing more"
+  - "ctx-watch status --reverse on this directory returns exit code 1 by design — the unimplemented spec is the point of the example"
+
+workflows:
+  intent_first_demo: "read project.ctx → read notification_service.py.ctx → implement notification_service.py → run ctx-watch status --reverse (should go green) → run ctx-run (should go green)"

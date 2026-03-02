@@ -140,6 +140,9 @@ python tools/ctx-watch/ctx_watch.py watch . --grace 300
 
 # One-shot scan of recently modified files without .ctx updates
 python tools/ctx-watch/ctx_watch.py status . --since 3600
+
+# Intent-first mode: find .ctx specs without a corresponding source file
+python tools/ctx-watch/ctx_watch.py status . --reverse
 ```
 
 ## Real-world examples
@@ -151,8 +154,8 @@ python tools/ctx-watch/ctx_watch.py status . --since 3600
 The project is at **v0.3.0**.
 
 - Schema: v0.3.0 — YAML, all sections optional, IDE autocomplete via JSON Schema; `project.ctx` convention for project-level context
-- Examples: three reference projects (`project-0` CLI, `project-1` FastAPI async, `project-2` TDD demo with intentional failures), each with a `project.ctx`
-- Tools: `ctx-run` — LLM-powered conceptual test runner (Anthropic / OpenAI / Ollama); `ctx-watch` — real-time drift detector
+- Examples: four reference projects (`project-0` CLI, `project-1` FastAPI async, `project-2` TDD demo, `project-3` intent-first — spec before code), each with a `project.ctx`
+- Tools: `ctx-run` — LLM-powered conceptual test runner (Anthropic / OpenAI / Ollama); `ctx-watch` — real-time drift detector with intent-first support (`--reverse`)
 - Real-world: [notebook-lm-downloader](https://github.com/Mauto82/notebook-lm-downloader)
 
 Contributions welcome — especially: real-world examples, feedback on the schema, and tooling ideas (linters, IDE plugins, CI integrations).

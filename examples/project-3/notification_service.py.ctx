@@ -1,0 +1,45 @@
+purpose: "Sends email and SMS notifications with per-channel retry logic and delivery status tracking"
+
+tensions:
+  - "Email and SMS share one NotificationService interface — callers must not know the channel; do not split into EmailService and SmsService"
+  - "Delivery status is tracked per-notification, never fire-and-forget — the caller needs to poll get_status(); a notification without a status record is a bug"
+  - "Retry uses exponential backoff — do not use fixed intervals; third-party APIs have burst rate limits that fixed-interval retries will hit repeatedly"
+  - "max_retries=3 is the default — callers may override per-send; the service must not hard-code this value internally"
+  - "Channels are pluggable — the send() method dispatches by channel string; adding a new channel (e.g. 'push') must not require modifying existing channel logic"
+
+workflows:
+  send: "validate channel → build payload → dispatch to channel handler → persist status('pending') → start retry loop if needed → update status on final outcome"
+  get_status: "look up notification_id → return current status (pending / delivered / failed)"
+  retry: "on transient failure → wait 2^attempt seconds → retry up to max_retries → on exhaustion: set status('failed')"
+
+conceptualTests:
+  - name: "Successful email send"
+    steps:
+      - action: "call send('user@example.com', 'email', 'Welcome!')"
+        expect: "returns a non-empty notification_id, status is 'pending'"
+      - action: "call get_status(notification_id) after delivery"
+        expect: "status is 'delivered'"
+
+  - name: "Successful SMS send"
+    steps:
+      - action: "call send('+39123456789', 'sms', 'Your code is 1234')"
+        expect: "returns a notification_id, status is 'pending'"
+      - action: "call get_status(notification_id) after delivery"
+        expect: "status is 'delivered'"
+
+  - name: "Retry on transient failure"
+    steps:
+      - action: "send to an address that fails transiently, configure max_retries=3"
+        expect: "service retries 3 times with exponential backoff (2s, 4s, 8s)"
+      - action: "all retries exhausted"
+        expect: "get_status returns 'failed', notification_id still valid"
+
+  - name: "Unknown channel"
+    steps:
+      - action: "call send('target', 'fax', 'Hello')"
+        expect: "raises ValueError: unsupported channel 'fax', no status record created"
+
+  - name: "Status isolation"
+    steps:
+      - action: "send two notifications, retrieve status of the first"
+        expect: "returns status for the first notification only, not the second"
