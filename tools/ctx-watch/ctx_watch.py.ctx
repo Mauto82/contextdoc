@@ -1,0 +1,14 @@
+purpose: "File watcher that warns when source files change without their .ctx companion being updated — catches drift at save time, not commit time"
+
+tensions:
+  - "grace_period defaults to 300s to avoid false positives during rapid edits — developers who want strict mode can pass --grace 0, but the default should not be lowered"
+  - "status uses filesystem mtime, watch uses in-memory monotonic timestamps — the two commands can disagree for the same file in the same session; this is intentional: status reflects disk state, watch reflects session activity"
+  - "reported dict tracks the monotonic time of the last report per file — a file re-triggers if its source was modified after the last report, so rapid edit→fix→edit cycles are correctly caught"
+  - "on_created is handled alongside on_modified — editors that write via tmp+rename (e.g. vim, most IDEs) emit created events on the final file, not modified"
+  - "no persistent log — drift state is in-memory only; restarting ctx-watch resets all tracking"
+  - "watchdog Observer runs in a background thread — ChangeTracker mutations from the handler thread and reads from the main loop are safe under the GIL for simple dict/set operations; no explicit locking needed"
+
+workflows:
+  watch: "Observer.start() → sleep(5) loop → drift_files() → for each new drift: compare changed_at vs last reported → print warning → KeyboardInterrupt → Observer.stop() → summary"
+  status: "os.walk(root) → filter by extension and mtime cutoff → compare source mtime vs ctx mtime → print drift list → exit 1 if any drift, exit 0 if clean"
+  ctx_detected: "on_modified/on_created for *.ctx → resolve source path (strip .ctx suffix) → tracker.record_ctx(source) → file removed from _ctx_updated discard on next source change"

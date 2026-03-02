@@ -1,0 +1,17 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.backends.legacy:build"
+
+[project]
+name = "ctx-watch"
+version = "0.3.0"
+description = "File watcher that warns when source files change without .ctx companion updates"
+license = { text = "MIT" }
+requires-python = ">=3.11"
+dependencies = [
+    "watchdog>=3.0.0",
+    "click>=8.1.0",
+]
+
+[project.scripts]
+ctx-watch = "ctx_watch:cli"
