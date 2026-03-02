@@ -6,9 +6,11 @@ tensions:
   - "reported dict tracks the monotonic time of the last report per file — a file re-triggers if its source was modified after the last report, so rapid edit→fix→edit cycles are correctly caught"
   - "on_created is handled alongside on_modified — editors that write via tmp+rename (e.g. vim, most IDEs) emit created events on the final file, not modified"
   - "no persistent log — drift state is in-memory only; restarting ctx-watch resets all tracking"
-  - "watchdog Observer runs in a background thread — ChangeTracker mutations from the handler thread and reads from the main loop are safe under the GIL for simple dict/set operations; no explicit locking needed"
+  - "--changed-files bypasses the mtime/since filter entirely — in CI, fresh clones have unreliable mtimes; the file list from git diff is the only reliable source of truth"
+  - "--ignore-dir extends SKIP_DIRS without replacing it — builtin skip dirs are always active; custom dirs are additive"
 
 workflows:
   watch: "Observer.start() → sleep(5) loop → drift_files() → for each new drift: compare changed_at vs last reported → print warning → KeyboardInterrupt → Observer.stop() → summary"
-  status: "os.walk(root) → filter by extension and mtime cutoff → compare source mtime vs ctx mtime → print drift list → exit 1 if any drift, exit 0 if clean"
-  ctx_detected: "on_modified/on_created for *.ctx → resolve source path (strip .ctx suffix) → tracker.record_ctx(source) → file removed from _ctx_updated discard on next source change"
+  status_mtime: "os.walk(root, skip_dirs) → filter by extension and mtime cutoff → compare source mtime vs ctx mtime → print drift list → exit 1 if any drift"
+  status_ci: "--changed-files splits input → for each matching source file → compare mtime vs ctx mtime → print drift list → exit 1 if any drift"
+  ctx_detected: "on_modified/on_created for *.ctx → resolve source path (strip .ctx suffix) → tracker.record_ctx(source)"

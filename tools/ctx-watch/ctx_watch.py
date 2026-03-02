@@ -39,8 +39,8 @@ def _timestamp() -> str:
     return datetime.now().strftime("%H:%M:%S")
 
 
-def _should_skip(path: Path) -> bool:
-    return any(part in SKIP_DIRS for part in path.parts)
+def _should_skip(path: Path, skip_dirs: set[str]) -> bool:
+    return any(part in skip_dirs for part in path.parts)
 
 
 def _ctx_of(source: Path) -> Path:
@@ -79,9 +79,10 @@ class ChangeTracker:
 # ── watchdog handler ──────────────────────────────────────────────────────────
 
 class CtxWatchHandler(FileSystemEventHandler):
-    def __init__(self, tracker: ChangeTracker, extensions: set[str]) -> None:
+    def __init__(self, tracker: ChangeTracker, extensions: set[str], skip_dirs: set[str]) -> None:
         self.tracker = tracker
         self.extensions = extensions
+        self.skip_dirs = skip_dirs
 
     def on_modified(self, event) -> None:
         if not event.is_directory:
@@ -93,7 +94,7 @@ class CtxWatchHandler(FileSystemEventHandler):
             self._handle(Path(event.src_path))
 
     def _handle(self, path: Path) -> None:
-        if _should_skip(path):
+        if _should_skip(path, self.skip_dirs):
             return
         name = path.name
         if name.endswith(".ctx"):
@@ -133,13 +134,16 @@ def cli():
               help="Seconds before reporting drift.")
 @click.option("--ext", default=None,
               help="Comma-separated extensions to watch (default: py,js,ts,go,rb,java,rs,php).")
+@click.option("--ignore-dir", multiple=True, metavar="DIR",
+              help="Additional directory name to skip (repeatable, e.g. --ignore-dir dist).")
 @click.option("--no-color", is_flag=True, help="Disable ANSI color output.")
-def watch(path: str, grace: int, ext: str | None, no_color: bool) -> None:
+def watch(path: str, grace: int, ext: str | None, ignore_dir: tuple[str, ...], no_color: bool) -> None:
     """Watch PATH for source changes without .ctx updates. Blocking (Ctrl+C to stop)."""
     extensions = set(ext.split(",")) if ext else DEFAULT_EXTENSIONS
+    skip_dirs = SKIP_DIRS | set(ignore_dir)
     c = _C(no_color)
     tracker = ChangeTracker(grace)
-    handler = CtxWatchHandler(tracker, extensions)
+    handler = CtxWatchHandler(tracker, extensions, skip_dirs)
 
     observer = Observer()
     observer.schedule(handler, path, recursive=True)
@@ -184,29 +188,45 @@ def watch(path: str, grace: int, ext: str | None, no_color: bool) -> None:
 @cli.command()
 @click.argument("path", default=".", type=click.Path(exists=True))
 @click.option("--since", default=3600, show_default=True,
-              help="Look back N seconds for recently modified files.")
+              help="Look back N seconds for recently modified files (ignored when --changed-files is set).")
+@click.option("--changed-files", default=None, metavar="FILES",
+              help="Whitespace-separated list of files to check. Pass '-' to read from stdin. "
+                   "Skips mtime filter — use in CI: --changed-files \"$(git diff --name-only HEAD~1)\".")
 @click.option("--ext", default=None,
               help="Comma-separated extensions to check.")
+@click.option("--ignore-dir", multiple=True, metavar="DIR",
+              help="Additional directory name to skip (repeatable).")
 @click.option("--no-color", is_flag=True, help="Disable ANSI color output.")
-def status(path: str, since: int, ext: str | None, no_color: bool) -> None:
+def status(
+    path: str,
+    since: int,
+    changed_files: str | None,
+    ext: str | None,
+    ignore_dir: tuple[str, ...],
+    no_color: bool,
+) -> None:
     """One-shot scan of PATH for source files modified without a .ctx update."""
     extensions = set(ext.split(",")) if ext else DEFAULT_EXTENSIONS
+    skip_dirs = SKIP_DIRS | set(ignore_dir)
     c = _C(no_color)
     root = Path(path).resolve()
-    cutoff = time.time() - since
     drift: list[tuple[Path, str]] = []
 
-    for dirpath, dirnames, filenames in os.walk(root):
-        dirnames[:] = [d for d in dirnames if d not in SKIP_DIRS]
-        for fname in filenames:
-            fpath = Path(dirpath) / fname
-            if fpath.suffix.lstrip(".") not in extensions:
+    if changed_files is not None:
+        # CI mode: check an explicit file list, no mtime filter
+        raw = sys.stdin.read() if changed_files == "-" else changed_files
+        file_list = raw.split()
+        checked = 0
+        for fpath_str in file_list:
+            fpath = Path(fpath_str)
+            if not fpath.is_absolute():
+                fpath = root / fpath
+            if not fpath.exists() or fpath.suffix.lstrip(".") not in extensions:
                 continue
+            checked += 1
             try:
                 src_mtime = fpath.stat().st_mtime
             except OSError:
-                continue
-            if src_mtime < cutoff:
                 continue
             ctx = _ctx_of(fpath)
             if not ctx.exists():
@@ -214,9 +234,32 @@ def status(path: str, since: int, ext: str | None, no_color: bool) -> None:
             elif ctx.stat().st_mtime < src_mtime:
                 lag = src_mtime - ctx.stat().st_mtime
                 drift.append((fpath, f".ctx is {_fmt_elapsed(lag)} older than source"))
+        summary_ok = f"No drift detected in {checked} changed file(s)."
+    else:
+        # mtime-based walk
+        cutoff = time.time() - since
+        for dirpath, dirnames, filenames in os.walk(root):
+            dirnames[:] = [d for d in dirnames if d not in skip_dirs]
+            for fname in filenames:
+                fpath = Path(dirpath) / fname
+                if fpath.suffix.lstrip(".") not in extensions:
+                    continue
+                try:
+                    src_mtime = fpath.stat().st_mtime
+                except OSError:
+                    continue
+                if src_mtime < cutoff:
+                    continue
+                ctx = _ctx_of(fpath)
+                if not ctx.exists():
+                    drift.append((fpath, "no .ctx file"))
+                elif ctx.stat().st_mtime < src_mtime:
+                    lag = src_mtime - ctx.stat().st_mtime
+                    drift.append((fpath, f".ctx is {_fmt_elapsed(lag)} older than source"))
+        summary_ok = f"No drift detected in the last {_fmt_elapsed(since)}."
 
     if not drift:
-        click.echo(f"{c.g}✓{c.rst}  No drift detected in the last {_fmt_elapsed(since)}.")
+        click.echo(f"{c.g}✓{c.rst}  {summary_ok}")
         sys.exit(0)
 
     click.echo(f"{c.y}{len(drift)} file(s) with stale context:{c.rst}")
