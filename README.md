@@ -145,6 +145,18 @@ python tools/ctx-watch/ctx_watch.py status . --since 3600
 python tools/ctx-watch/ctx_watch.py status . --reverse
 ```
 
+Two distinct signals: `⚠` means drift — source changed, `.ctx` not updated. `→` means spec without implementation — the intent-first case.
+
+**Intent-first development** — a workflow pattern where the `.ctx` is written *before* the source file exists, mirroring TDD's red-green cycle. The `.ctx` is the red state: tensions define the constraints the implementation must respect, `conceptualTests` define the expected behavior, `workflows` define the intended flow. The AI starts from a complete spec rather than an empty file and a vague prompt.
+
+```bash
+# Write notification_service.py.ctx first — source doesn't exist yet
+python tools/ctx-watch/ctx_watch.py status . --reverse
+# → notification_service.py.ctx: source not found  (exit 1 — usable in CI)
+```
+
+See `examples/project-3` for a complete intent-first example: a notification service fully specified in `.ctx` with the source intentionally absent.
+
 ## Real-world examples
 
 - [notebook-lm-downloader](https://github.com/Mauto82/notebook-lm-downloader) — a Python CLI tool for downloading content from NotebookLM. Single-file project: one `.ctx` with tensions (including a third-party library monkey-patch), workflows, and conceptual tests.
