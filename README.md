@@ -74,7 +74,17 @@ The rename reflects this shift:
 
 1. Check out the [schema specification](./schema/README.md)
 2. Look at the [examples](./examples/) directory
-3. The repository includes `.vscode/settings.json` with the YAML schema pre-configured — autocomplete works in VS Code, Trae, Cursor, Windsurf, and other forks out of the box. Requires the [YAML extension by Red Hat](https://marketplace.visualstudio.com/items?itemName=redhat.vscode-yaml) (recommended automatically via `.vscode/extensions.json`).
+3. The repository includes `.vscode/settings.json` with the YAML schema pre-configured — syntax highlighting and autocomplete work in VS Code, Trae, Cursor, Windsurf, and other forks out of the box. Requires the [YAML extension by Red Hat](https://marketplace.visualstudio.com/items?itemName=redhat.vscode-yaml) (recommended automatically via `.vscode/extensions.json`).
+
+   The key settings are `files.associations` (tells the editor `.ctx` is YAML, enabling syntax highlighting) and `yaml.schemas` (applies the ContextDoc schema for autocomplete). Both are needed:
+   ```json
+   {
+     "files.associations": { "*.ctx": "yaml" },
+     "yaml.schemas": {
+       "https://raw.githubusercontent.com/Mauto82/contextdoc/main/schema/contextdoc.schema.json": "**/*.ctx"
+     }
+   }
+   ```
 
    For editors without `.vscode/` support, add this comment at the top of any `.ctx` file:
    ```yaml
