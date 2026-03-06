@@ -86,6 +86,19 @@ The rename reflects this shift:
    }
    ```
 
+   If you have a file ending in `.ctx` that is *not* a ContextDoc YAML companion (e.g. a dotenv config named `.env.ctx` used as `--env-file` in Docker), override the association for that specific file — more specific patterns take precedence over globs:
+   ```json
+   "files.associations": {
+     "*.ctx": "yaml",
+     ".env.ctx": "properties"
+   }
+   ```
+   Also add it to `.ctxignore` to exclude it from ctx-watch checks:
+   ```
+   # .ctxignore
+   .env.ctx
+   ```
+
    For editors without `.vscode/` support, add this comment at the top of any `.ctx` file:
    ```yaml
    # yaml-language-server: $schema=https://raw.githubusercontent.com/Mauto82/contextdoc/main/schema/contextdoc.schema.json
