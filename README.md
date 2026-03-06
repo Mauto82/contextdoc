@@ -147,6 +147,15 @@ python tools/ctx-watch/ctx_watch.py status . --reverse
 
 Two distinct signals: `⚠` means drift — source changed, `.ctx` not updated. `→` means spec without implementation — the intent-first case.
 
+To exclude files or paths from all ctx-watch checks, add a `.ctxignore` file at the project root. Patterns use `fnmatch` glob syntax — patterns without `/` match on filename only, patterns with `/` match on the relative path from root:
+
+```
+# .ctxignore
+__init__.py
+src/generated/*.py
+*.min.js
+```
+
 **Intent-first development** — a workflow pattern where the `.ctx` is written *before* the source file exists, mirroring TDD's red-green cycle. The `.ctx` is the red state: tensions define the constraints the implementation must respect, `conceptualTests` define the expected behavior, `workflows` define the intended flow. The AI starts from a complete spec rather than an empty file and a vague prompt.
 
 ```bash
