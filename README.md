@@ -74,11 +74,11 @@ The rename reflects this shift:
 
 1. Check out the [schema specification](./schema/README.md)
 2. Look at the [examples](./examples/) directory
-3. Enable IDE autocomplete by adding to VS Code `settings.json`:
-   ```json
-   "yaml.schemas": {
-     "https://raw.githubusercontent.com/Mauto82/contextdoc/main/schema/contextdoc.schema.json": "**/*.ctx"
-   }
+3. The repository includes `.vscode/settings.json` with the YAML schema pre-configured — autocomplete works in VS Code, Trae, Cursor, Windsurf, and other forks out of the box. Requires the [YAML extension by Red Hat](https://marketplace.visualstudio.com/items?itemName=redhat.vscode-yaml) (recommended automatically via `.vscode/extensions.json`).
+
+   For editors without `.vscode/` support, add this comment at the top of any `.ctx` file:
+   ```yaml
+   # yaml-language-server: $schema=https://raw.githubusercontent.com/Mauto82/contextdoc/main/schema/contextdoc.schema.json
    ```
 
 ## Using ContextDoc with AI agents
@@ -154,6 +154,14 @@ To exclude files or paths from all ctx-watch checks, add a `.ctxignore` file at 
 __init__.py
 src/generated/*.py
 *.min.js
+```
+
+**Docker:** if the project is mounted as `./:/workspace`, the `.ctxignore` at the project root is automatically available at `/workspace/.ctxignore` — no extra configuration needed. ctx-watch reads it from the directory it scans:
+
+```bash
+# Inside the Docker container (e.g. via Makefile)
+python /opt/contextdoc/tools/ctx-watch/ctx_watch.py status /workspace
+# → reads /workspace/.ctxignore automatically
 ```
 
 **Intent-first development** — a workflow pattern where the `.ctx` is written *before* the source file exists, mirroring TDD's red-green cycle. The `.ctx` is the red state: tensions define the constraints the implementation must respect, `conceptualTests` define the expected behavior, `workflows` define the intended flow. The AI starts from a complete spec rather than an empty file and a vague prompt.
