@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """ctx-watch: warns when source files change without their .ctx companion being updated."""
 
+import fnmatch
 import os
 import sys
 import time
@@ -45,6 +46,34 @@ def _should_skip(path: Path, skip_dirs: set[str]) -> bool:
 
 def _ctx_of(source: Path) -> Path:
     return source.parent / (source.name + ".ctx")
+
+
+def _load_ignore_patterns(root: Path) -> list[str]:
+    ignore_file = root / ".ctxignore"
+    if not ignore_file.exists():
+        return []
+    patterns = []
+    for line in ignore_file.read_text().splitlines():
+        line = line.strip()
+        if line and not line.startswith("#"):
+            patterns.append(line)
+    return patterns
+
+
+def _is_ignored(path: Path, root: Path, patterns: list[str]) -> bool:
+    if not patterns:
+        return False
+    try:
+        rel = str(path.relative_to(root))
+    except ValueError:
+        rel = str(path)
+    name = path.name
+    for pattern in patterns:
+        if fnmatch.fnmatch(rel, pattern):
+            return True
+        if "/" not in pattern and fnmatch.fnmatch(name, pattern):
+            return True
+    return False
 
 
 # ── change tracker ────────────────────────────────────────────────────────────
@@ -93,10 +122,19 @@ class ChangeTracker:
 # ── watchdog handler ──────────────────────────────────────────────────────────
 
 class CtxWatchHandler(FileSystemEventHandler):
-    def __init__(self, tracker: ChangeTracker, extensions: set[str], skip_dirs: set[str]) -> None:
+    def __init__(
+        self,
+        tracker: ChangeTracker,
+        extensions: set[str],
+        skip_dirs: set[str],
+        ignore_patterns: list[str],
+        root: Path,
+    ) -> None:
         self.tracker = tracker
         self.extensions = extensions
         self.skip_dirs = skip_dirs
+        self.ignore_patterns = ignore_patterns
+        self.root = root
 
     def on_modified(self, event) -> None:
         if not event.is_directory:
@@ -109,6 +147,8 @@ class CtxWatchHandler(FileSystemEventHandler):
 
     def _handle(self, path: Path) -> None:
         if _should_skip(path, self.skip_dirs):
+            return
+        if _is_ignored(path, self.root, self.ignore_patterns):
             return
         name = path.name
         if name.endswith(".ctx"):
@@ -158,8 +198,10 @@ def watch(path: str, grace: int, ext: str | None, ignore_dir: tuple[str, ...], n
     extensions = set(ext.split(",")) if ext else DEFAULT_EXTENSIONS
     skip_dirs = SKIP_DIRS | set(ignore_dir)
     c = _C(no_color)
+    root_path = Path(path).resolve()
+    ignore_patterns = _load_ignore_patterns(root_path)
     tracker = ChangeTracker(grace)
-    handler = CtxWatchHandler(tracker, extensions, skip_dirs)
+    handler = CtxWatchHandler(tracker, extensions, skip_dirs, ignore_patterns, root_path)
 
     observer = Observer()
     observer.schedule(handler, path, recursive=True)
@@ -167,7 +209,7 @@ def watch(path: str, grace: int, ext: str | None, ignore_dir: tuple[str, ...], n
 
     ext_display = ",".join(sorted(extensions))
     click.echo(
-        f"{c.c}{c.b}ctx-watch{c.rst}: watching {Path(path).resolve()} "
+        f"{c.c}{c.b}ctx-watch{c.rst}: watching {root_path} "
         f"(grace: {grace}s, extensions: {ext_display})"
     )
 
@@ -243,6 +285,7 @@ def status(
     skip_dirs = SKIP_DIRS | set(ignore_dir)
     c = _C(no_color)
     root = Path(path).resolve()
+    ignore_patterns = _load_ignore_patterns(root)
     drift: list[tuple[Path, str]] = []
 
     if reverse:
@@ -258,6 +301,8 @@ def status(
                     continue                                        # skip project.ctx etc.
                 ctx_path = Path(dirpath) / fname
                 source = ctx_path.parent / source_name
+                if _is_ignored(source, root, ignore_patterns):
+                    continue
                 try:
                     ctx_mtime = ctx_path.stat().st_mtime
                 except OSError:
@@ -287,6 +332,8 @@ def status(
                 fpath = root / fpath
             if not fpath.exists() or fpath.suffix.lstrip(".") not in extensions:
                 continue
+            if _is_ignored(fpath, root, ignore_patterns):
+                continue
             checked += 1
             try:
                 src_mtime = fpath.stat().st_mtime
@@ -307,6 +354,8 @@ def status(
             for fname in filenames:
                 fpath = Path(dirpath) / fname
                 if fpath.suffix.lstrip(".") not in extensions:
+                    continue
+                if _is_ignored(fpath, root, ignore_patterns):
                     continue
                 try:
                     src_mtime = fpath.stat().st_mtime

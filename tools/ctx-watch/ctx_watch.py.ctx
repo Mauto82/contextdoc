@@ -8,6 +8,7 @@ tensions:
   - "no persistent log — drift state is in-memory only; restarting ctx-watch resets all tracking"
   - "--changed-files bypasses the mtime/since filter entirely — in CI, fresh clones have unreliable mtimes; the file list from git diff is the only reliable source of truth"
   - "--ignore-dir extends SKIP_DIRS without replacing it — builtin skip dirs are always active; custom dirs are additive"
+  - ".ctxignore is loaded once at startup from the root of the watched path — patterns use fnmatch glob syntax; patterns without '/' are matched against filename only, patterns with '/' against the relative path from root; restarting ctx-watch is required to pick up edits to .ctxignore"
   - "--reverse identifies specs without source by stripping .ctx suffix and checking extension — project.ctx has no recognized extension before .ctx so it is correctly skipped"
   - "intent_files() checks Path.exists() on each yield — source may appear between watch cycles; no explicit 'source created' event needed to clear the intent"
 
