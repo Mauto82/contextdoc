@@ -204,13 +204,30 @@ See `examples/project-3` for a complete intent-first example: a notification ser
 
 - [notebook-lm-downloader](https://github.com/Mauto82/notebook-lm-downloader) — a Python CLI tool for downloading content from NotebookLM. Single-file project: one `.ctx` with tensions (including a third-party library monkey-patch), workflows, and conceptual tests.
 
+## VS Code Extension
+
+The **ContextDoc** extension brings conceptual tests and drift detection directly into VS Code — no Python installation required.
+
+Install from the [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=Mauto.contextdoc) or search "ContextDoc" in the Extensions panel.
+
+**Features:**
+- **Run conceptual tests** with a single click (CodeLens on `conceptualTests:`)
+- **Setup wizard** — choose your LLM provider (OpenAI, Anthropic, Ollama, OpenRouter), model, and API key
+- **Drift detection** on save — warns when source files change without `.ctx` updates
+- **Native LLM runner** — no Python/CLI dependency, calls APIs directly
+- **Fallback to CLI** — if you have `ctx-run` installed, it can use that too
+- **Sidebar panel** with test results
+- **Status bar** drift counter
+
+See [`vscode-extension/README.md`](./vscode-extension/README.md) for details.
+
 ## Current State
 
 The project is at **v0.3.0**.
 
 - Schema: v0.3.0 — YAML, all sections optional, IDE autocomplete via JSON Schema; `project.ctx` convention for project-level context
 - Examples: four reference projects (`project-0` CLI, `project-1` FastAPI async, `project-2` TDD demo, `project-3` intent-first — spec before code), each with a `project.ctx`
-- Tools: `ctx-run` — LLM-powered conceptual test runner (Anthropic / OpenAI / Ollama); `ctx-watch` — real-time drift detector with intent-first support (`--reverse`)
+- Tools: `ctx-run` — LLM-powered conceptual test runner (Anthropic / OpenAI / Ollama); `ctx-watch` — real-time drift detector with intent-first support (`--reverse`); **VS Code extension** with native LLM runner
 - Real-world: [notebook-lm-downloader](https://github.com/Mauto82/notebook-lm-downloader)
 
 Contributions welcome — especially: real-world examples, feedback on the schema, and tooling ideas (linters, IDE plugins, CI integrations).

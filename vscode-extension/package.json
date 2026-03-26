@@ -3,8 +3,13 @@
   "displayName": "ContextDoc",
   "description": "Run conceptual tests and detect .ctx drift directly in VS Code",
   "version": "0.1.0",
-  "publisher": "contextdoc",
+  "publisher": "Mauto",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Mauto82/contextdoc"
+  },
+  "icon": "icon.png",
   "engines": {
     "vscode": "^1.85.0"
   },
@@ -26,6 +31,10 @@
       {
         "command": "contextdoc.checkDrift",
         "title": "ContextDoc: Check Drift"
+      },
+      {
+        "command": "contextdoc.setup",
+        "title": "ContextDoc: Setup LLM Provider"
       }
     ],
     "configuration": {
@@ -81,6 +90,9 @@
     "compile": "tsc -p ./",
     "watch": "tsc -watch -p ./",
     "package": "vsce package"
+  },
+  "dependencies": {
+    "yaml": "^2.4.0"
   },
   "devDependencies": {
     "@types/vscode": "^1.85.0",

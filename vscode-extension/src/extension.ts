@@ -1,10 +1,13 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
-import { runCtxTests } from './runner';
+import { runCtxTests, RunResult } from './runner';
+import { runCtxTestsNative } from './ctxRunner';
+import { resolveProvider, getApiKey } from './llm';
 import { TestResultsProvider } from './testResultsView';
 import { checkDrift, checkFullDrift } from './watcher';
 import { updateDiagnostics } from './diagnostics';
 import { StatusBarManager } from './statusBar';
+import { isConfigured, runSetupWizard } from './setupWizard';
 
 let debounceTimer: ReturnType<typeof setTimeout> | undefined;
 
@@ -16,7 +19,29 @@ export function activate(context: vscode.ExtensionContext): void {
 
   vscode.window.registerTreeDataProvider('contextdoc.testResults', testResultsProvider);
 
+  // --- First-run setup prompt ---
+
+  if (!isConfigured()) {
+    vscode.window
+      .showInformationMessage(
+        'ContextDoc: no LLM model configured. Run setup wizard?',
+        'Setup Now',
+        'Later'
+      )
+      .then((choice) => {
+        if (choice === 'Setup Now') {
+          runSetupWizard(context.secrets);
+        }
+      });
+  }
+
   // --- Commands ---
+
+  context.subscriptions.push(
+    vscode.commands.registerCommand('contextdoc.setup', () => {
+      runSetupWizard(context.secrets);
+    })
+  );
 
   context.subscriptions.push(
     vscode.commands.registerCommand('contextdoc.runTests', async () => {
@@ -29,7 +54,7 @@ export function activate(context: vscode.ExtensionContext): void {
         return;
       }
 
-      await runAndShow(root, root, outputChannel, testResultsProvider);
+      await runAndShow(root, root, outputChannel, testResultsProvider, context);
     })
   );
 
@@ -47,7 +72,7 @@ export function activate(context: vscode.ExtensionContext): void {
       const root = getWorkspaceRoot();
       if (!root) return;
 
-      await runAndShow(filePath, root, outputChannel, testResultsProvider);
+      await runAndShow(filePath, root, outputChannel, testResultsProvider, context);
     })
   );
 
@@ -115,17 +140,56 @@ function getWorkspaceRoot(): string | undefined {
   return folders[0].uri.fsPath;
 }
 
+/**
+ * Try native runner first. If model/key not configured, fall back to CLI.
+ */
+async function resolveRunner(
+  targetPath: string,
+  workspaceRoot: string,
+  outputChannel: vscode.OutputChannel,
+  context: vscode.ExtensionContext,
+): Promise<RunResult> {
+  const config = vscode.workspace.getConfiguration('contextdoc');
+  const model = config.get<string>('model', '');
+
+  if (model) {
+    // Native runner
+    const { provider } = resolveProvider(model);
+    let apiKey = '';
+
+    // Try secrets store
+    const stored = await context.secrets.get(`contextdoc.apiKey.${provider.id}`);
+    if (stored) {
+      apiKey = stored;
+    } else {
+      apiKey = getApiKey(provider.id);
+    }
+
+    if (provider.id === 'ollama' || apiKey) {
+      outputChannel.appendLine(`[native] Running with model=${model}, provider=${provider.id}`);
+      return runCtxTestsNative(targetPath, { model, apiKey });
+    }
+
+    outputChannel.appendLine(`[native] No API key for ${provider.id}, falling back to CLI`);
+  }
+
+  // Fallback to CLI
+  outputChannel.appendLine('[cli] Using external ctx-run');
+  return runCtxTests(targetPath, workspaceRoot, outputChannel);
+}
+
 async function runAndShow(
   targetPath: string,
   workspaceRoot: string,
   outputChannel: vscode.OutputChannel,
-  provider: TestResultsProvider
+  provider: TestResultsProvider,
+  context: vscode.ExtensionContext,
 ): Promise<void> {
   try {
     vscode.window.withProgress(
       { location: vscode.ProgressLocation.Notification, title: 'Running conceptual tests...' },
       async () => {
-        const result = await runCtxTests(targetPath, workspaceRoot, outputChannel);
+        const result = await resolveRunner(targetPath, workspaceRoot, outputChannel, context);
         provider.update(result);
 
         const { steps_passed, steps_total, failed_scenarios } = result.summary;

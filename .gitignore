@@ -27,3 +27,6 @@ out/
 # Testing
 .coverage
 .pytest_cache/
+
+# VS Code extension packaging
+*.vsix
