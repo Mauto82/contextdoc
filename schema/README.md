@@ -87,6 +87,25 @@ conceptualTests:
         expect: "error message 'No todo found with ID X', no state change"
 ```
 
+#### Authority and immutability
+
+`conceptualTests` are **the specification** — code must conform to them, not the other way around.
+
+An AI agent must **never** modify a `conceptualTest` to make its code pass. If the code cannot satisfy a test, the agent must report the conflict and ask for guidance rather than rewriting the test.
+
+This is critical in the **intent-first workflow** (`.ctx` written before the source file exists): the `conceptualTests` are the "red" in TDD's red-green cycle. The implementation's job is to make them green — not to redefine what green means.
+
+`conceptualTests` may only be updated when:
+- The **requirement itself has changed** (a human decision, not an implementation convenience)
+- A test was genuinely wrong when written (the human author confirms)
+
+They must **never** be updated because:
+- The implementation finds them inconvenient
+- The agent thinks a different behavior is better
+- Making the test pass would require too much refactoring
+
+When in doubt: **ask, don't modify.**
+
 ---
 
 ### `ref`

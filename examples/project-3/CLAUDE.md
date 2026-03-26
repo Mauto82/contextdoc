@@ -9,6 +9,12 @@ This example demonstrates the intent-first workflow: the `.ctx` spec is written 
 
 `notification_service.py` does not exist yet. That is intentional.
 
+## The `.ctx` is the spec — do not modify it
+
+`notification_service.py.ctx` is the specification. Your job is to write code that satisfies it — never the other way around. Do not modify the `.ctx` file: not the `conceptualTests`, not the `tensions`, not the `workflows`. If a test seems wrong or impossible to satisfy, stop and ask.
+
+This is the core contract of intent-first development: the spec is written by a human, the implementation is written by the agent. The agent does not get to redefine the spec.
+
 ## Your task
 
 Implement `notification_service.py` so that all `conceptualTests` in `notification_service.py.ctx` pass.

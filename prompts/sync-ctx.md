@@ -13,12 +13,14 @@ Check each section of the `.ctx`:
 
 - `tensions`: are any tensions now inaccurate, obsolete, or missing?
 - `workflows`: do the described flows still match the implementation?
-- `conceptualTests`: are any scenarios now impossible, incomplete, or missing given the changes?
+- `conceptualTests`: **do NOT suggest changes to make tests match the code.** Only flag if a scenario has become genuinely impossible due to a requirement change (not an implementation choice). If a conceptual test no longer passes, the code is likely wrong — not the test.
 - `todos`: have any todos been resolved by this change?
 
 For each section, tell me:
 1. What (if anything) needs to change in the `.ctx`
 2. The exact updated content to replace it with
+
+**Important:** `conceptualTests` are the specification. Never modify them to accommodate the implementation. If you believe a test is wrong, explain why and wait for confirmation — do not rewrite it.
 
 Do not add content that wasn't already there unless a gap is critical.
 Keep the same minimal style — no verbosity.

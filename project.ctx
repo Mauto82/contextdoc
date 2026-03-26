@@ -6,6 +6,7 @@ tensions:
   - "project.ctx and file-level .ctx serve different scopes — project.ctx captures cross-cutting constraints; file .ctx captures file-specific context; they must not duplicate each other"
   - "Operational instructions (CLAUDE.md, .cursorrules) are separate from context (.ctx) — directives tell agents how to behave; context tells them what the system is; both are needed, neither replaces the other"
   - "A .ctx file should never exceed ~60 lines — the schema enforces no limit but the principle does; if a file needs more, the documentation is probably over-specified"
+  - "conceptualTests are immutable specifications — AI agents must adapt code to satisfy them, never modify them to match the implementation; changes require explicit human approval"
 
 workflows:
   adoption: "add project.ctx at root → identify highest-risk file → add file.ctx with tensions → add conceptualTests → install git hook → optionally run ctx-run"

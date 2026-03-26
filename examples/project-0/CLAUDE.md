@@ -26,9 +26,13 @@ When writing or generating tests, use the `conceptualTests` section of the relev
 To generate tests for a file:
 > "Implement the conceptualTests from `<file>.ctx` as pytest tests in `tests/test_<file>.py`"
 
+## Never modify `.ctx` files without permission
+
+Do not edit any `.ctx` file — especially `conceptualTests` — without explicit human approval. If your code doesn't satisfy a conceptual test, fix the code, not the test. If a test seems wrong or impossible to satisfy, ask before changing it.
+
 ## After modifying code
 
-If your change affects a tension, workflow, or makes a conceptual test outdated — update the `.ctx`. The `.ctx` must stay in sync with the code.
+If your change affects a tension, workflow, or makes a conceptual test outdated — flag it and ask before updating the `.ctx`.
 
 ## TODOs in `.ctx` files
 

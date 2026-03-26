@@ -28,9 +28,13 @@ When generating tests, use the `conceptualTests` sections as the specification. 
 To generate tests for a file:
 > "Implement the conceptualTests from `<file>.ctx` as pytest tests. Use httpx.AsyncClient with the FastAPI app."
 
+## Never modify `.ctx` files without permission
+
+Do not edit any `.ctx` file — especially `conceptualTests` — without explicit human approval. If your code doesn't satisfy a conceptual test, fix the code, not the test. If a test seems wrong or impossible to satisfy, ask before changing it.
+
 ## After modifying code
 
-If your change affects a tension, workflow, or makes a conceptual test outdated — update the `.ctx`.
+If your change affects a tension, workflow, or makes a conceptual test outdated — flag it and ask before updating the `.ctx`.
 
 ## TODOs in `.ctx` files
 

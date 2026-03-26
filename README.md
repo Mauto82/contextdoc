@@ -131,6 +131,7 @@ workflows:
 | [`generate-tests`](./prompts/generate-tests.md) | Implement `conceptualTests` as real tests in your framework |
 | [`review-tensions`](./prompts/review-tensions.md) | Verify code doesn't violate architectural constraints |
 | [`sync-ctx`](./prompts/sync-ctx.md) | After a code change, check if the `.ctx` needs updating |
+| [`intent-first`](./prompts/intent-first.md) | Implement code from a `.ctx` spec — enforces the "never modify the spec" contract |
 
 See [`examples/project-0/CLAUDE.md`](./examples/project-0/CLAUDE.md) for a concrete example of the full setup.
 
@@ -188,6 +189,8 @@ python /opt/contextdoc/tools/ctx-watch/ctx_watch.py status /workspace
 ```
 
 **Intent-first development** — a workflow pattern where the `.ctx` is written *before* the source file exists, mirroring TDD's red-green cycle. The `.ctx` is the red state: tensions define the constraints the implementation must respect, `conceptualTests` define the expected behavior, `workflows` define the intended flow. The AI starts from a complete spec rather than an empty file and a vague prompt.
+
+**Critical rule:** in intent-first mode, the `.ctx` file is the spec — not a suggestion. The AI must adapt the code to satisfy the `conceptualTests`, never modify the tests to match its code. If a test seems wrong or impossible to satisfy, the AI must ask rather than rewrite the spec. This is the single most important contract in ContextDoc-driven development.
 
 ```bash
 # Write notification_service.py.ctx first — source doesn't exist yet

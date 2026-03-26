@@ -24,6 +24,10 @@ store.py       → store.py.ctx    (partial — see todos in store.py.ctx)
 - **One coupon per cart** — do not add multi-coupon stacking without updating the tension in store.py.ctx
 - **validate() lives on Coupon, not Cart** — Cart calls it, but the guard logic stays in coupon.py
 
+## Never modify `.ctx` files without permission
+
+Do not edit any `.ctx` file — especially `conceptualTests` — without explicit human approval. The failing tests in `store.py.ctx` are the spec: fix the code to satisfy them, never rewrite the tests to match the code.
+
 ## Implementing the TODOs
 
 The two missing pieces in `store.py`:
