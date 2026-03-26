@@ -1,0 +1,91 @@
+{
+  "name": "contextdoc",
+  "displayName": "ContextDoc",
+  "description": "Run conceptual tests and detect .ctx drift directly in VS Code",
+  "version": "0.1.0",
+  "publisher": "contextdoc",
+  "license": "MIT",
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": ["Testing", "Linters"],
+  "activationEvents": [
+    "workspaceContains:**/*.ctx"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "contextdoc.runTests",
+        "title": "ContextDoc: Run Tests"
+      },
+      {
+        "command": "contextdoc.runTestsOnFile",
+        "title": "ContextDoc: Run Tests on This File"
+      },
+      {
+        "command": "contextdoc.checkDrift",
+        "title": "ContextDoc: Check Drift"
+      }
+    ],
+    "configuration": {
+      "title": "ContextDoc",
+      "properties": {
+        "contextdoc.model": {
+          "type": "string",
+          "default": "",
+          "description": "LLM model for ctx-run (e.g. ollama/llama3, gpt-4o-mini). Falls back to $CTX_MODEL env var."
+        },
+        "contextdoc.ctxRunPath": {
+          "type": "string",
+          "default": "ctx-run",
+          "description": "Path to the ctx-run executable."
+        },
+        "contextdoc.ctxWatchPath": {
+          "type": "string",
+          "default": "ctx-watch",
+          "description": "Path to the ctx-watch executable."
+        },
+        "contextdoc.watchEnabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable automatic drift detection on file save."
+        }
+      }
+    },
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "contextdoc",
+          "title": "ContextDoc",
+          "icon": "$(beaker)"
+        }
+      ]
+    },
+    "views": {
+      "contextdoc": [
+        {
+          "id": "contextdoc.testResults",
+          "name": "Test Results"
+        }
+      ]
+    },
+    "languages": [
+      {
+        "id": "yaml",
+        "extensions": [".ctx"]
+      }
+    ]
+  },
+  "scripts": {
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "package": "vsce package"
+  },
+  "devDependencies": {
+    "@types/vscode": "^1.85.0",
+    "@types/node": "^20.0.0",
+    "typescript": "^5.3.0",
+    "@vscode/vsce": "^2.22.0"
+  }
+}

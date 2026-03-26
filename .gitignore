@@ -21,6 +21,8 @@ build/
 dist/
 *.log
 .env
+node_modules/
+out/
 
 # Testing
 .coverage
