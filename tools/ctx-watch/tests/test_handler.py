@@ -42,7 +42,8 @@ def _make_handler(tmp_path=None, extensions=None, skip_dirs=None):
     tracker = ChangeTracker(grace_period=300)
     ext = extensions if extensions is not None else DEFAULT_EXTENSIONS
     skip = skip_dirs if skip_dirs is not None else SKIP_DIRS
-    handler = CtxWatchHandler(tracker, ext, skip)
+    root = Path(tmp_path) if tmp_path else Path("/tmp/fake-root")
+    handler = CtxWatchHandler(tracker, ext, skip, ignore_patterns=[], root=root)
     return handler, tracker
 
 
