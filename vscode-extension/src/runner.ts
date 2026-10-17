@@ -26,6 +26,7 @@ export interface FileResult {
 }
 
 export interface RunResult {
+  cancelled?: boolean;
   summary: {
     files: number;
     scenarios: number;

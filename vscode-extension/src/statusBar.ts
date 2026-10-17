@@ -24,3 +24,25 @@ export class StatusBarManager {
     this.item.dispose();
   }
 }
+
+/** The model in use, always visible: a click opens the setup to change it. */
+export class ModelStatusBar {
+  private item: vscode.StatusBarItem;
+
+  constructor() {
+    this.item = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 49);
+    this.item.command = 'contextdoc.setup';
+    this.refresh();
+    this.item.show();
+  }
+
+  refresh(): void {
+    const model = vscode.workspace.getConfiguration('contextdoc').get<string>('model', '');
+    this.item.text = model ? `$(beaker) ${model}` : '$(beaker) ctx: no model';
+    this.item.tooltip = model ? 'ContextDoc model: click to change' : 'ContextDoc: click to choose a model';
+  }
+
+  dispose(): void {
+    this.item.dispose();
+  }
+}

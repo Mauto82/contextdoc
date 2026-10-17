@@ -6,7 +6,8 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import * as yaml from 'yaml';
-import { resolveProvider, getApiKey, LlmMessage } from './llm';
+import { resolveProvider, LlmMessage, CancelledError } from './llm';
+import { ResultCache, cacheKey } from './cache';
 import { RunResult, FileResult, ScenarioResult, StepResult } from './runner';
 
 // ---------------------------------------------------------------------------
@@ -254,8 +255,16 @@ async function runScenario(
   sourceWarning: string | null,
   language: string,
   apiKey: string,
-  timeout: number = 60000,
+  timeout: number,
+  cache: ResultCache | undefined,
+  signal: AbortSignal | undefined,
 ): Promise<ScenarioResult> {
+  const key = cacheKey(scenario, sourceContent, model);
+  const cached = cache?.get(key);
+  if (cached) {
+    return { ...cached, from_cache: true };
+  }
+
   const { provider, modelName } = resolveProvider(model);
 
   const messages: LlmMessage[] = [
@@ -264,10 +273,14 @@ async function runScenario(
   ];
 
   try {
-    const response = await provider.call(messages, modelName, apiKey, timeout);
+    const response = await provider.call(messages, modelName, apiKey, timeout, signal);
     const parsed = parseLlmResponse(response.content);
-    return buildScenarioResult(scenario, response.content, parsed);
+    const result = buildScenarioResult(scenario, response.content, parsed);
+    // only real answers go in the cache: errors are retried next time
+    if (!result.error && sourceContent !== null) { cache?.set(key, result); }
+    return result;
   } catch (err) {
+    if (err instanceof CancelledError) { throw err; }
     return {
       name: scenario.name ?? 'unnamed',
       overall_passed: false,
@@ -281,11 +294,12 @@ async function runScenario(
 
 async function runCtxFile(
   ctxPath: string,
-  model: string,
-  apiKey: string,
-  failFast: boolean = false,
-  timeout: number = 60000,
+  options: NativeRunOptions,
+  onScenarioDone: () => void,
 ): Promise<FileResult> {
+  const { model, apiKey } = options;
+  const failFast = options.failFast ?? false;
+  const timeout = options.timeout ?? 60000;
   let ctx: Record<string, unknown>;
   try {
     ctx = loadCtx(ctxPath);
@@ -316,9 +330,11 @@ async function runCtxFile(
   const scenarios: ScenarioResult[] = [];
   for (const scenario of conceptualTests) {
     const result = await runScenario(
-      model, scenario, sourcePath, sourceContent, warning, language, apiKey, timeout
+      model, scenario, sourcePath, sourceContent, warning, language, apiKey, timeout,
+      options.cache, options.signal
     );
     scenarios.push(result);
+    onScenarioDone();
     if (failFast && !result.overall_passed) {
       break;
     }
@@ -342,6 +358,37 @@ export interface NativeRunOptions {
   apiKey: string;
   failFast?: boolean;
   timeout?: number;
+  cache?: ResultCache;
+  signal?: AbortSignal;
+  onProgress?: (done: number, total: number) => void;
+}
+
+export interface RunPlan {
+  files: number;
+  scenarios: number;
+  cached: number;   // scenarios with a cached result for this model
+  llmCalls: number; // scenarios that will call the model
+}
+
+/** What a run would do, before doing it: how many scenarios, how many already cached. */
+export function planRun(targetPath: string, model: string, cache?: ResultCache): RunPlan {
+  const plan: RunPlan = { files: 0, scenarios: 0, cached: 0, llmCalls: 0 };
+  for (const ctxPath of collectCtxFiles(targetPath)) {
+    let tests: TestScenario[] | undefined;
+    try {
+      tests = loadCtx(ctxPath).conceptualTests as TestScenario[] | undefined;
+    } catch {
+      continue;
+    }
+    if (!tests || tests.length === 0) { continue; }
+    plan.files++;
+    const { sourceContent } = resolveSource(ctxPath);
+    for (const scenario of tests) {
+      plan.scenarios++;
+      if (cache?.has(cacheKey(scenario, sourceContent, model))) { plan.cached++; } else { plan.llmCalls++; }
+    }
+  }
+  return plan;
 }
 
 /**
@@ -353,20 +400,25 @@ export async function runCtxTestsNative(
   options: NativeRunOptions,
 ): Promise<RunResult> {
   const ctxFiles = collectCtxFiles(targetPath);
+  const total = planRun(targetPath, options.model).scenarios;
+  let done = 0;
+  const tick = (): void => { done++; options.onProgress?.(done, total); };
 
   const results: FileResult[] = [];
-  for (const ctxPath of ctxFiles) {
-    const result = await runCtxFile(
-      ctxPath,
-      options.model,
-      options.apiKey,
-      options.failFast ?? false,
-      options.timeout ?? 60000,
-    );
-    results.push(result);
-    if (options.failFast && result.scenarios.some((s) => !s.overall_passed)) {
-      break;
+  let cancelled = false;
+  try {
+    for (const ctxPath of ctxFiles) {
+      const result = await runCtxFile(ctxPath, options, tick);
+      results.push(result);
+      if (options.failFast && result.scenarios.some((s) => !s.overall_passed)) {
+        break;
+      }
     }
+  } catch (err) {
+    if (!(err instanceof CancelledError)) { throw err; }
+    cancelled = true;
+  } finally {
+    options.cache?.save();
   }
 
   // Build summary
@@ -386,6 +438,7 @@ export async function runCtxTestsNative(
   );
 
   return {
+    cancelled,
     summary: {
       files: filesRun,
       scenarios: scenariosTotal,

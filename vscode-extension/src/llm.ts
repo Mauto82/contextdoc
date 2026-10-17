@@ -20,7 +20,14 @@ export interface LlmResponse {
 export interface LlmProvider {
   id: string;
   name: string;
-  call(messages: LlmMessage[], model: string, apiKey: string, timeout?: number): Promise<LlmResponse>;
+  call(messages: LlmMessage[], model: string, apiKey: string, timeout?: number, signal?: AbortSignal): Promise<LlmResponse>;
+}
+
+export class CancelledError extends Error {
+  constructor() {
+    super('Cancelled');
+    this.name = 'CancelledError';
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -29,11 +36,16 @@ export interface LlmProvider {
 
 function httpRequest(
   url: string,
-  body: string,
+  body: string | null,
   headers: Record<string, string>,
-  timeoutMs: number = 60000
+  timeoutMs: number = 60000,
+  signal?: AbortSignal
 ): Promise<string> {
   return new Promise((resolve, reject) => {
+    if (signal?.aborted) {
+      reject(new CancelledError());
+      return;
+    }
     const parsed = new URL(url);
     const isHttps = parsed.protocol === 'https:';
     const lib = isHttps ? https : http;
@@ -43,7 +55,7 @@ function httpRequest(
         hostname: parsed.hostname,
         port: parsed.port || (isHttps ? 443 : 80),
         path: parsed.pathname + parsed.search,
-        method: 'POST',
+        method: body === null ? 'GET' : 'POST',
         headers: {
           'Content-Type': 'application/json',
           ...headers,
@@ -64,13 +76,21 @@ function httpRequest(
       }
     );
 
-    req.on('error', reject);
+    // cancelling a run aborts the request in flight, so a slow local model stops working too
+    const onAbort = (): void => {
+      req.destroy();
+      reject(new CancelledError());
+    };
+    signal?.addEventListener('abort', onAbort, { once: true });
+    req.on('close', () => signal?.removeEventListener('abort', onAbort));
+
+    req.on('error', (err) => reject(signal?.aborted ? new CancelledError() : err));
     req.on('timeout', () => {
       req.destroy();
-      reject(new Error(`Request timed out after ${timeoutMs}ms`));
+      reject(new Error(`Request timed out after ${Math.round(timeoutMs / 1000)}s`));
     });
 
-    req.write(body);
+    if (body !== null) { req.write(body); }
     req.end();
   });
 }
@@ -96,7 +116,8 @@ export class OpenAIProvider implements LlmProvider {
     messages: LlmMessage[],
     model: string,
     apiKey: string,
-    timeout: number = 60000
+    timeout: number = 60000,
+    signal?: AbortSignal
   ): Promise<LlmResponse> {
     const url = `${this.baseUrl}/chat/completions`;
     const headers: Record<string, string> = {};
@@ -112,7 +133,7 @@ export class OpenAIProvider implements LlmProvider {
       max_tokens: 4096,
     });
 
-    const raw = await httpRequest(url, body, headers, timeout);
+    const raw = await httpRequest(url, body, headers, timeout, signal);
     const parsed = JSON.parse(raw);
     const content = parsed?.choices?.[0]?.message?.content ?? '';
     return { content };
@@ -131,7 +152,8 @@ export class AnthropicProvider implements LlmProvider {
     messages: LlmMessage[],
     model: string,
     apiKey: string,
-    timeout: number = 60000
+    timeout: number = 60000,
+    signal?: AbortSignal
   ): Promise<LlmResponse> {
     const url = 'https://api.anthropic.com/v1/messages';
 
@@ -152,7 +174,7 @@ export class AnthropicProvider implements LlmProvider {
       'anthropic-version': '2023-06-01',
     };
 
-    const raw = await httpRequest(url, body, headers, timeout);
+    const raw = await httpRequest(url, body, headers, timeout, signal);
     const parsed = JSON.parse(raw);
     const content = parsed?.content?.[0]?.text ?? '';
     return { content };
@@ -227,4 +249,42 @@ export function getApiKey(providerId: string, secrets?: Record<string, string>):
   }
 
   return '';
+}
+
+// ---------------------------------------------------------------------------
+// Ollama: installed models and where they run
+// ---------------------------------------------------------------------------
+
+export const OLLAMA_URL = 'http://localhost:11434';
+
+export interface OllamaModel {
+  name: string;
+  sizeBytes: number;
+  cloud: boolean;     // runs on Ollama's servers (":cloud" models), not on this machine
+  embedding: boolean; // embedding models can't answer prompts
+}
+
+/** Models installed in the local Ollama, or null when Ollama isn't reachable. */
+export async function listOllamaModels(timeoutMs: number = 3000): Promise<OllamaModel[] | null> {
+  try {
+    const raw = await httpRequest(`${OLLAMA_URL}/api/tags`, null, {}, timeoutMs);
+    const models = (JSON.parse(raw)?.models ?? []) as Array<{ name: string; size?: number }>;
+    return models.map((m) => ({
+      name: m.name,
+      sizeBytes: m.size ?? 0,
+      cloud: /[:-]cloud$/.test(m.name) || (m.size ?? 0) < 1e6,
+      embedding: /embed/i.test(m.name),
+    }));
+  } catch {
+    return null;
+  }
+}
+
+/** "heavy" when a local model takes more than half of this machine's RAM. */
+export function isHeavyForThisMachine(model: OllamaModel, totalMemBytes: number): boolean {
+  return !model.cloud && model.sizeBytes > totalMemBytes * 0.5;
+}
+
+export function formatGB(bytes: number): string {
+  return `${(bytes / 1e9).toFixed(1)} GB`;
 }

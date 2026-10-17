@@ -2,7 +2,7 @@
   "name": "contextdoc",
   "displayName": "ContextDoc",
   "description": "Run conceptual tests and detect .ctx drift directly in VS Code",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "publisher": "Mauto",
   "license": "MIT",
   "repository": {
@@ -38,6 +38,10 @@
       {
         "command": "contextdoc.setup",
         "title": "ContextDoc: Setup LLM Provider"
+      },
+      {
+        "command": "contextdoc.clearCache",
+        "title": "ContextDoc: Clear Test Results Cache"
       }
     ],
     "configuration": {
@@ -46,7 +50,7 @@
         "contextdoc.model": {
           "type": "string",
           "default": "",
-          "description": "LLM model for ctx-run (e.g. ollama/llama3, gpt-4o-mini). Falls back to $CTX_MODEL env var."
+          "description": "Model for conceptual tests, e.g. ollama/gemma4:cloud, ollama/gemma4:e2b, claude-haiku-5-5. Set it with \"ContextDoc: Setup LLM Provider\". Empty: the external ctx-run CLI is used, if installed."
         },
         "contextdoc.ctxRunPath": {
           "type": "string",
@@ -57,6 +61,17 @@
           "type": "boolean",
           "default": true,
           "description": "Check drift on save and when the workspace opens (built in, no ctx-watch needed)."
+        },
+        "contextdoc.timeout": {
+          "type": "number",
+          "default": 120,
+          "minimum": 10,
+          "description": "Seconds to wait for each LLM answer before giving up on that scenario."
+        },
+        "contextdoc.confirmRuns": {
+          "type": "boolean",
+          "default": true,
+          "description": "Before running the whole workspace (or with a model that is heavy for this machine), show how many LLM calls the run will make and ask to confirm."
         }
       }
     },
