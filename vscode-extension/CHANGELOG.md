@@ -1,9 +1,10 @@
 # Changelog
 
-## Unreleased
+## 0.2.0
+
+Aligned with ContextDoc 0.4 (`pip install contextdoc`).
 
 - **Lint of .ctx files** in the Problems panel, same rules as `ctx-lint` (`spec/lint`): L001–L008.
-
 - **Drift from git history** inside a repository, like `ctx-watch status`: a source drifts when commits after the last `.ctx` commit changed it, or when it has uncommitted changes and its `.ctx` doesn't. Modification times only outside git (they say nothing after a clone or checkout).
 - **One runner spec with ctx-run** (`spec/runner`): same prompts, language map, LLM settings and result texts; parity tests in both suites.
 - **Result cache shared with ctx-run** (`~/.cache/ctx-run/cache.json`, same format and key): a result computed by the CLI is reused by the extension and vice versa. The extension's own cache file is no longer used.
