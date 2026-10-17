@@ -107,7 +107,8 @@ def _load_spec() -> dict:
     here = os.path.dirname(os.path.abspath(__file__))
     candidates = [
         os.environ.get("CTX_RUNNER_SPEC"),
-        os.path.join(here, "runner-spec.json"),                         # installed next to the module
+        os.path.join(here, "contextdoc_spec", "runner-spec.json"),      # installed package (pip install contextdoc)
+        os.path.join(here, "runner-spec.json"),                         # copied next to the module
         os.path.join(here, "..", "..", "spec", "runner", "runner-spec.json"),  # repository checkout
     ]
     for path in candidates:

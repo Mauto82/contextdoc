@@ -24,7 +24,8 @@ import yaml
 
 def _load_spec() -> dict:
     here = os.path.dirname(os.path.abspath(__file__))
-    for path in (os.environ.get("CTX_LINT_SPEC"), os.path.join(here, "lint-spec.json"),
+    for path in (os.environ.get("CTX_LINT_SPEC"), os.path.join(here, "contextdoc_spec", "lint-spec.json"),
+                 os.path.join(here, "lint-spec.json"),
                  os.path.join(here, "..", "..", "spec", "lint", "lint-spec.json")):
         if path and os.path.isfile(path):
             with open(path, encoding="utf-8") as f:

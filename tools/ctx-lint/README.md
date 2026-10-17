@@ -15,7 +15,8 @@ you ask with `--strict` (for CI).
 | L008 | a `purpose` longer than one line |
 
 ```bash
-pip install -r tools/ctx-lint/requirements.txt
+pipx install contextdoc                             # the ctx-lint command
+pip install -r tools/ctx-lint/requirements.txt      # or, from a checkout:
 python tools/ctx-lint/ctx_lint.py src/              # text report
 python tools/ctx-lint/ctx_lint.py src/ --strict     # exit 1 on warnings (CI)
 python tools/ctx-lint/ctx_lint.py src/ --format json

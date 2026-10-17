@@ -24,8 +24,9 @@ try:  # mcp 2.x
 except ImportError:  # mcp 1.x
     from mcp.server.fastmcp import FastMCP as _Server
 
-# ctx-watch provides the drift rules (git history, .ctxignore, skipped dirs)
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "ctx-watch"))
+# ctx-watch provides the drift rules (git history, .ctxignore, skipped dirs): installed next to this module
+# by `pip install contextdoc`, or in ../ctx-watch in a checkout
+sys.path.append(str(Path(__file__).resolve().parent.parent / "ctx-watch"))
 import ctx_watch  # noqa: E402
 
 ROOT = Path.cwd()
