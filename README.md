@@ -158,6 +158,8 @@ python tools/ctx-run/ctx_run.py run examples/project-1/auth.py.ctx --model ollam
 python tools/ctx-run/ctx_run.py run examples/ --model claude-haiku-5-5
 ```
 
+For Python sources `ctx-run` can also **generate real pytest tests** from the `conceptualTests` and keep them in sync (`ctx-run generate`, `ctx-run verify`, `ctx-run generate --check` for CI): deterministic, free to re-run, and regenerated only when a scenario changes. See the [ctx-run README](./tools/ctx-run/README.md#executable-tests-generate-and-verify).
+
 **`ctx-watch`** — file watcher that warns when source files change without their `.ctx` companion being updated. Catches drift earlier than the git hook — at save time, not commit time. See the [`tools/ctx-watch/`](./tools/ctx-watch/) directory:
 
 ```bash

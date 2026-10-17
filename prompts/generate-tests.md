@@ -1,5 +1,7 @@
 # Prompt: Generate tests from .ctx
 
+> For Python, `ctx-run generate` does this automatically and keeps the tests in sync with the scenarios (see the ctx-run README). Use this prompt for other languages or for a one-off generation by your agent.
+
 Use this prompt to generate concrete tests from the `conceptualTests` section of a `.ctx` file.
 
 ---

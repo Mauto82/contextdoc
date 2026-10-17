@@ -11,6 +11,7 @@ tensions:
   - "LiteLLM as the only provider abstraction — do not add per-provider clients; the model string convention (ollama/x, gpt-x, claude-x) handles routing"
 
 workflows:
+  generate_verify: "generate / verify commands delegate to ctx_generate.py (executable pytest tests from conceptualTests); see ctx_generate.py.ctx"
   run_command: "collect_ctx_files(path) → for each .ctx: load_ctx → resolve_source → for each scenario: build_prompt → call_llm → parse_response → build_scenario_result → render"
   parse_fallback: "json.loads(raw) → strip markdown fences → regex extract {...} → if all fail: mark scenario as error with raw text"
   exit_code: "any scenario failed or file error → exit 1 | tool-level error (bad path) → exit 2 | all pass → exit 0"

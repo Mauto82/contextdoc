@@ -64,6 +64,29 @@ python tools/ctx-run/ctx_run.py run examples/ --no-cache
 python tools/ctx-run/ctx_run.py clear-cache
 ```
 
+## Executable tests: `generate` and `verify`
+
+LLM evaluation is portable but not deterministic. For Python sources, `ctx-run` can also turn the
+`conceptualTests` into real pytest tests and keep them in sync with the scenarios:
+
+```bash
+# from the project root: one file per .ctx in tests/contextdoc/, one block per scenario
+python tools/ctx-run/ctx_run.py generate src/ --model ollama/gemma4:e2b
+
+# run them (pytest, no LLM) and report per scenario
+python tools/ctx-run/ctx_run.py verify src/
+
+# CI: fail if a scenario has no test, or changed since its test was generated (no LLM)
+python tools/ctx-run/ctx_run.py generate src/ --check
+```
+
+Each block in the generated file is tagged with the scenario's name and a hash of the scenario. On the
+next `generate`, unchanged scenarios are kept as they are (no LLM call), changed ones are regenerated,
+removed ones are dropped. The scenario is the specification: a test is never edited by hand to make it
+pass. Local modules imported by the source are included in the prompt, so the model uses real
+constructors instead of guessing. Only pytest for now; `--force` regenerates everything, `--out` changes
+the folder. See `examples/project-2/tests/contextdoc` for generated tests.
+
 ## Supported providers
 
 | Provider | Model string example | API key env var |
