@@ -1,0 +1,55 @@
+{
+  "$comment": "Single source of truth for the conceptual-test runner, read by tools/ctx-run (Python) and vscode-extension (TypeScript). Placeholders are ${name}. Parts are joined with a newline. Change it here, then run both parity suites.",
+  "version": 1,
+  "llm": {
+    "temperature": 0,
+    "maxTokens": 4096
+  },
+  "languages": {
+    ".py": "python",
+    ".js": "javascript",
+    ".ts": "typescript",
+    ".go": "go",
+    ".rb": "ruby",
+    ".rs": "rust",
+    ".java": "java",
+    ".cs": "csharp",
+    ".php": "php",
+    ".swift": "swift",
+    ".kt": "kotlin"
+  },
+  "evaluate": {
+    "system": "You are a code behavior analyzer. Your job is to reason about whether source code correctly implements described behaviors — without executing the code.\n\nYou will be given source code and a test scenario with sequential steps (action + expected outcome). For each step, reason about whether the source code, as written, would produce the expected outcome.\n\nRespond with valid JSON only. No explanation outside the JSON object. No markdown fences.",
+    "source": "Source file: ${label}\n${fence}\n${source}\n```",
+    "sourceMissing": "Source file: NOT AVAILABLE (${note})",
+    "sourceMissingDefaultNote": "source file unavailable",
+    "sourceMissingInstruction": "Note: since source is unavailable, mark all steps as failed with explanation 'source code not available for analysis'.",
+    "scenario": "\nScenario: \"${name}\"",
+    "stepsHeader": "Steps:",
+    "step": "${n}. action: \"${action}\"\n   expect: \"${expect}\"",
+    "instructions": "\nFor each step, evaluate whether the source code produces the expected outcome.\n\nRespond with this exact JSON structure:\n{\n  \"overall\": true or false,\n  \"steps\": [\n    {\n      \"action\": \"the action text\",\n      \"passed\": true or false,\n      \"explanation\": \"one sentence, max 25 words\"\n    }\n  ]\n}\n\nRules:\n- \"overall\" must be true only if ALL steps pass\n- Include one entry per step, in the same order\n- \"explanation\" is always required, even for passing steps\n- Do not include any text outside the JSON object"
+  },
+  "fix": {
+    "system": "You are a code improvement advisor. Given failing conceptual test steps and source code, suggest the minimal code change to make the tests pass.",
+    "source": "Source file: ${label}\n${fence}\n${source}\n```",
+    "sourceMissing": "Source file: NOT AVAILABLE",
+    "header": "\nScenario \"${name}\" has the following failing steps:",
+    "step": "- action: \"${action}\"\n  expected: \"${expect}\"",
+    "analysis": "  analysis: \"${explanation}\"",
+    "instructions": "\nSuggest the minimal code change that would make these failing steps pass. Be specific: name the function or method, and describe exactly what to add, change, or remove. Reply in 2-4 sentences only. No code blocks needed."
+  },
+  "results": {
+    "unparsable": "LLM response could not be parsed. Raw: ${raw}",
+    "unparsableRawChars": 200,
+    "llmError": "LLM error: ${error}",
+    "stepMissing": "Step missing from LLM response"
+  },
+  "cache": {
+    "version": 1,
+    "path": "$XDG_CACHE_HOME/ctx-run/cache.json, or ~/.cache/ctx-run/cache.json",
+    "key": "sha256 hex of: canonical JSON of the scenario + source content (empty if missing) + model string",
+    "canonicalJson": "keys sorted, separators ', ' and ': ', non-ASCII characters escaped as \\uXXXX (Python json.dumps(sort_keys=True))",
+    "entry": "{ \"timestamp\": ISO 8601 UTC, \"result\": { \"name\", \"overall_passed\", \"error\", \"steps\": [{ \"action\", \"expect\", \"passed\", \"explanation\" }] } }",
+    "store": "only results without error"
+  }
+}

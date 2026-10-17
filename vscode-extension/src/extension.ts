@@ -1,6 +1,5 @@
 import * as vscode from 'vscode';
 import { runCtxTests, RunResult } from './runner';
-import * as path from 'path';
 import * as os from 'os';
 import { runCtxTestsNative, planRun } from './ctxRunner';
 import { resolveProvider, getApiKey, listOllamaModels, isHeavyForThisMachine, estimatedRamBytes, loadedOllamaModels, formatGB, formatRam } from './llm';
@@ -19,7 +18,8 @@ export function activate(context: vscode.ExtensionContext): void {
   const statusBar = new StatusBarManager();
   const testResultsProvider = new TestResultsProvider();
   const modelBar = new ModelStatusBar();
-  const cache = new ResultCache(path.join(context.globalStorageUri.fsPath, 'results-cache.json'));
+  // shared with ctx-run: a result computed by the CLI is reused here and vice versa
+  const cache = new ResultCache();
 
   // drift per source file (absolute path): a save updates only the file it touches
   const drift = new Map<string, DriftEntry>();

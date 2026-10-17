@@ -1,0 +1,37 @@
+[
+  {
+    "id": "basic",
+    "scenario": {"name": "Basic flow", "steps": [{"action": "call f(1)", "expect": "returns 2"}, {"action": "call f(-1)", "expect": "raises ValueError"}]},
+    "sourcePath": "svc/f.py", "sourceContent": "def f(x):\n    if x < 0:\n        raise ValueError\n    return x + 1\n",
+    "sourceWarning": null, "language": "python", "model": "ollama/gemma4:e2b",
+    "raw": "{\"overall\": true, \"steps\": [{\"action\": \"call f(1)\", \"passed\": true, \"explanation\": \"1 + 1 = 2\"}, {\"action\": \"call f(-1)\", \"passed\": true, \"explanation\": \"negative input raises\"}]}"
+  },
+  {
+    "id": "unicode-and-fenced-answer",
+    "scenario": {"name": "Città «test» — ✓", "steps": [{"action": "crea un utente con nome “Zoë”", "expect": "status 'attivo'"}]},
+    "sourcePath": "users.ts", "sourceContent": "export const create = (n: string) => ({ n, status: 'attivo' });\n",
+    "sourceWarning": null, "language": "typescript", "model": "claude-haiku-5-5",
+    "raw": "```json\n{\"overall\": false, \"steps\": [{\"action\": \"x\", \"passed\": false, \"explanation\": \"status is set\"}]}\n```"
+  },
+  {
+    "id": "missing-source-and-step",
+    "scenario": {"name": "No source", "steps": [{"action": "a", "expect": "b"}, {"action": "c"}]},
+    "sourcePath": "gone.go", "sourceContent": null,
+    "sourceWarning": "source file not found: gone.go", "language": "go", "model": "gpt-4o-mini",
+    "raw": "Here you go: {\"overall\": false, \"steps\": [{\"passed\": false, \"explanation\": \"source code not available for analysis\"}]} hope it helps"
+  },
+  {
+    "id": "unparsable",
+    "scenario": {"steps": [{"action": "only action"}], "name": "Bad answer", "extra": {"z": 1, "a": [true, null]}},
+    "sourcePath": null, "sourceContent": "x = 1\n",
+    "sourceWarning": null, "language": "", "model": "ollama/llama3",
+    "raw": "I think it passes, but I am not sure."
+  },
+  {
+    "id": "placeholder-lookalikes",
+    "scenario": {"name": "Template ${name}", "steps": [{"action": "use ${expect} literally", "expect": "keeps ${n}"}]},
+    "sourcePath": "t.py", "sourceContent": "s = '${source}'\n",
+    "sourceWarning": null, "language": "python", "model": "m",
+    "raw": "{\"steps\": [{\"passed\": true, \"explanation\": \"ok\"}]}"
+  }
+]

@@ -50,8 +50,8 @@ jobs:
           cache: npm
           cache-dependency-path: vscode-extension/package-lock.json
       - run: npm ci
-      - name: Type-check and compile
-        run: npx tsc -p ./
+      - name: Type-check and compile (copies the runner spec into out/)
+        run: npm run compile
       - name: Unit tests
         run: node --test test/unit/*.test.js
       - name: Package

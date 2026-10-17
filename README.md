@@ -148,7 +148,7 @@ bash /path/to/concept-doc/hooks/install.sh
 
 The hook warns but never blocks commits — consistent with ContextDoc's non-binding philosophy.
 
-**`ctx-run`** — LLM-powered runner for `conceptualTests`. Reads `.ctx` files, sends source code + scenarios to an LLM, reports pass/fail per step. Supports Anthropic, OpenAI, and Ollama via [LiteLLM](https://github.com/BerriAI/litellm) — see the [`tools/ctx-run/`](./tools/ctx-run/) directory:
+**`ctx-run`** — LLM-powered runner for `conceptualTests` (prompts and cache rules in [`spec/runner`](./spec/runner/), shared with the VS Code extension: the two use the same result cache). Reads `.ctx` files, sends source code + scenarios to an LLM, reports pass/fail per step. Supports Anthropic, OpenAI, and Ollama via [LiteLLM](https://github.com/BerriAI/litellm) — see the [`tools/ctx-run/`](./tools/ctx-run/) directory:
 
 ```bash
 pip install -r tools/ctx-run/requirements.txt

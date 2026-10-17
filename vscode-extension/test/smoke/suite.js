@@ -47,7 +47,7 @@ exports.run = async () => {
 
   if (process.env.CONTEXTDOC_TEST_MODEL) {
     await vscode.commands.executeCommand('contextdoc.runTestsOnFile');
-    const cache = path.join(process.env.CONTEXTDOC_SMOKE_USER_DATA, 'User', 'globalStorage', 'mauto.contextdoc', 'results-cache.json');
+    const cache = path.join(process.env.XDG_CACHE_HOME, 'ctx-run', 'cache.json'); // shared with ctx-run
     check(fs.existsSync(cache), `Run Tests with ${process.env.CONTEXTDOC_TEST_MODEL} completes and caches results`);
   } else {
     console.log('  - LLM run skipped (set CONTEXTDOC_TEST_MODEL to enable)');
