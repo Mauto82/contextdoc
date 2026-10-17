@@ -25,7 +25,7 @@ const PROVIDER_OPTIONS: ProviderOption[] = [
   {
     label: 'Anthropic',
     id: 'anthropic',
-    models: ['claude-haiku-20240307', 'claude-sonnet-4-20250514', 'claude-opus-4-20250514'],
+    models: ['claude-haiku-5-5', 'claude-sonnet-5-5', 'claude-opus-5-5'],
     needsKey: true,
     envVar: 'ANTHROPIC_API_KEY',
   },
@@ -38,7 +38,7 @@ const PROVIDER_OPTIONS: ProviderOption[] = [
   {
     label: 'OpenRouter',
     id: 'openrouter',
-    models: ['openrouter/auto', 'openrouter/google/gemini-pro', 'openrouter/meta-llama/llama-3-70b-instruct'],
+    models: ['openrouter/auto'],
     needsKey: true,
     envVar: 'OPENROUTER_API_KEY',
   },
@@ -88,7 +88,7 @@ export async function runSetupWizard(secrets: vscode.SecretStorage): Promise<boo
   if (modelPick.label.includes('Custom')) {
     const custom = await vscode.window.showInputBox({
       title: 'ContextDoc Setup (2/3): Custom Model',
-      prompt: 'Enter the model identifier (e.g. gpt-4o-mini, claude-haiku-20240307)',
+      prompt: 'Enter the model identifier (e.g. gpt-4o-mini, claude-haiku-5-5, ollama/llama3, openrouter/vendor/model)',
       placeHolder: 'model-name',
     });
     if (!custom) { return false; }

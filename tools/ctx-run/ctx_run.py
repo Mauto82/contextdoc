@@ -336,7 +336,7 @@ def call_llm(model: str, system: str, user: str, timeout: int = 60) -> str:
             {"role": "user", "content": user},
         ],
         temperature=0,
-        max_tokens=1500,
+        max_tokens=4096,  # room for reasoning models, whose thinking counts against the limit
         timeout=timeout,
     )
     return response.choices[0].message.content or ""
@@ -647,8 +647,8 @@ def cli() -> None:
 @click.option(
     "--model",
     default=None,
-    help="LiteLLM model string (e.g. ollama/llama3, claude-haiku-20240307, gpt-4o-mini). "
-         "Defaults to $CTX_MODEL env var or claude-haiku-20240307.",
+    help="LiteLLM model string (e.g. ollama/llama3, claude-haiku-5-5, gpt-4o-mini). "
+         "Defaults to $CTX_MODEL env var or claude-haiku-5-5.",
 )
 @click.option("--fail-fast", is_flag=True, help="Stop after first failing scenario.")
 @click.option("--no-color", is_flag=True, help="Disable ANSI colors.")
@@ -687,7 +687,7 @@ def run(
     global _color_enabled
     _color_enabled = not no_color and sys.stdout.isatty()
 
-    resolved_model = model or os.environ.get("CTX_MODEL") or "claude-haiku-20240307"
+    resolved_model = model or os.environ.get("CTX_MODEL") or "claude-haiku-5-5"
     use_cache = not no_cache
 
     # Load cache once for the whole run

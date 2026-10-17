@@ -58,6 +58,13 @@ export function runCtxTests(
         outputChannel.appendLine(stderr);
       }
 
+      if (error && (error as NodeJS.ErrnoException).code === 'ENOENT') {
+        reject(new Error(
+          "no LLM model configured and ctx-run not found. Run 'ContextDoc: Setup LLM Provider' to use the built-in runner."
+        ));
+        return;
+      }
+
       if (!stdout.trim()) {
         reject(new Error(stderr || 'ctx-run produced no output'));
         return;

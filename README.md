@@ -155,7 +155,7 @@ pip install -r tools/ctx-run/requirements.txt
 
 # Run against a single file or a whole directory
 python tools/ctx-run/ctx_run.py run examples/project-1/auth.py.ctx --model ollama/llama3
-python tools/ctx-run/ctx_run.py run examples/ --model claude-haiku-20240307
+python tools/ctx-run/ctx_run.py run examples/ --model claude-haiku-5-5
 ```
 
 **`ctx-watch`** — file watcher that warns when source files change without their `.ctx` companion being updated. Catches drift earlier than the git hook — at save time, not commit time. See the [`tools/ctx-watch/`](./tools/ctx-watch/) directory:
@@ -217,7 +217,7 @@ Install from the [VS Code Marketplace](https://marketplace.visualstudio.com/item
 **Features:**
 - **Run conceptual tests** with a single click (CodeLens on `conceptualTests:`)
 - **Setup wizard** — choose your LLM provider (OpenAI, Anthropic, Ollama, OpenRouter), model, and API key
-- **Drift detection** on save — warns when source files change without `.ctx` updates
+- **Drift detection**, built in — warns when source files change without `.ctx` updates, on save and when the workspace opens
 - **Native LLM runner** — no Python/CLI dependency, calls APIs directly
 - **Fallback to CLI** — if you have `ctx-run` installed, it can use that too
 - **Sidebar panel** with test results

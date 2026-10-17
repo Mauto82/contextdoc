@@ -108,7 +108,8 @@ export class OpenAIProvider implements LlmProvider {
       model,
       messages,
       temperature: 0,
-      max_tokens: 1500,
+      // room for reasoning models, whose thinking counts against the limit
+      max_tokens: 4096,
     });
 
     const raw = await httpRequest(url, body, headers, timeout);
@@ -140,7 +141,7 @@ export class AnthropicProvider implements LlmProvider {
 
     const body = JSON.stringify({
       model,
-      max_tokens: 1500,
+      max_tokens: 4096,
       temperature: 0,
       ...(systemMsg ? { system: systemMsg.content } : {}),
       messages: nonSystem.map((m) => ({ role: m.role, content: m.content })),
@@ -182,6 +183,11 @@ export function resolveProvider(model: string): { provider: LlmProvider; modelNa
     const modelName = model.substring(slashIdx + 1);
     const provider = PROVIDERS[prefix];
     if (provider) {
+      // OpenRouter ids are "vendor/model" or "openrouter/<router>" (e.g. openrouter/auto):
+      // keep the prefix when it is part of the id
+      if (prefix === 'openrouter' && !modelName.includes('/')) {
+        return { provider, modelName: model };
+      }
       return { provider, modelName };
     }
   }

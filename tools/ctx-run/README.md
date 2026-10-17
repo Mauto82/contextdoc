@@ -68,11 +68,11 @@ python tools/ctx-run/ctx_run.py clear-cache
 
 | Provider | Model string example | API key env var |
 |---|---|---|
-| Anthropic | `claude-haiku-20240307` | `ANTHROPIC_API_KEY` |
+| Anthropic | `claude-haiku-5-5` | `ANTHROPIC_API_KEY` |
 | OpenAI | `gpt-4o-mini` | `OPENAI_API_KEY` |
 | Ollama (local) | `ollama/llama3`, `ollama/codellama` | — |
 
-The model defaults to `$CTX_MODEL` env var, or `claude-haiku-20240307` if not set.
+The model defaults to `$CTX_MODEL` env var, or `claude-haiku-5-5` if not set.
 
 ```bash
 # Set model via env var

@@ -2,7 +2,7 @@
   "name": "contextdoc",
   "displayName": "ContextDoc",
   "description": "Run conceptual tests and detect .ctx drift directly in VS Code",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "publisher": "Mauto",
   "license": "MIT",
   "repository": {
@@ -13,7 +13,10 @@
   "engines": {
     "vscode": "^1.85.0"
   },
-  "categories": ["Testing", "Linters"],
+  "categories": [
+    "Testing",
+    "Linters"
+  ],
   "activationEvents": [
     "workspaceContains:**/*.ctx"
   ],
@@ -48,17 +51,12 @@
         "contextdoc.ctxRunPath": {
           "type": "string",
           "default": "ctx-run",
-          "description": "Path to the ctx-run executable."
-        },
-        "contextdoc.ctxWatchPath": {
-          "type": "string",
-          "default": "ctx-watch",
-          "description": "Path to the ctx-watch executable."
+          "description": "Path to the ctx-run executable, used only when no model is configured."
         },
         "contextdoc.watchEnabled": {
           "type": "boolean",
           "default": true,
-          "description": "Enable automatic drift detection on file save."
+          "description": "Check drift on save and when the workspace opens (built in, no ctx-watch needed)."
         }
       }
     },
@@ -82,11 +80,14 @@
     "languages": [
       {
         "id": "yaml",
-        "extensions": [".ctx"]
+        "extensions": [
+          ".ctx"
+        ]
       }
     ]
   },
   "scripts": {
+    "vscode:prepublish": "npm run compile",
     "compile": "tsc -p ./",
     "watch": "tsc -watch -p ./",
     "package": "vsce package"

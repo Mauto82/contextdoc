@@ -29,10 +29,15 @@ Re-run anytime via the command palette: `ContextDoc: Setup LLM Provider`
 
 ### Drift Detection
 
-- **On save**: automatically checks if source files have changed without their `.ctx` being updated
+Built in, same rules as `ctx-watch` (no Python, no CLI): a source file drifts when its `.ctx` companion is older than the source. `.ctxignore` patterns are honoured.
+
+- **When the workspace opens**: a full scan
+- **On save**: saving a source file or its `.ctx` re-checks that file only; the other warnings stay
 - **Manual**: `ContextDoc: Check Drift` from the command palette
 - Drifted files appear as warnings in the Problems panel
 - Status bar shows the current drift count
+
+Unlike `ctx-watch`, files without a `.ctx` are not reported: ContextDoc expects a `.ctx` only where it adds value.
 
 ### Native LLM Runner
 
@@ -45,7 +50,7 @@ If you already have `ctx-run` installed, the extension falls back to the CLI whe
 | Provider | Models | API Key |
 |----------|--------|---------|
 | **OpenAI** | gpt-4o-mini, gpt-4o, o3-mini, ... | `OPENAI_API_KEY` or setup wizard |
-| **Anthropic** | claude-haiku, claude-sonnet, claude-opus, ... | `ANTHROPIC_API_KEY` or setup wizard |
+| **Anthropic** | claude-haiku-5-5, claude-sonnet-5-5, claude-opus-5-5, ... | `ANTHROPIC_API_KEY` or setup wizard |
 | **Ollama** | llama3, mistral, codellama, ... | Not required (local) |
 | **OpenRouter** | Any model via OpenRouter | `OPENROUTER_API_KEY` or setup wizard |
 
@@ -54,9 +59,8 @@ If you already have `ctx-run` installed, the extension falls back to the CLI whe
 | Setting | Default | Description |
 |---------|---------|-------------|
 | `contextdoc.model` | `""` | LLM model (e.g. `gpt-4o-mini`, `ollama/llama3`) |
-| `contextdoc.watchEnabled` | `true` | Enable drift detection on save |
-| `contextdoc.ctxRunPath` | `ctx-run` | Path to external ctx-run CLI (fallback) |
-| `contextdoc.ctxWatchPath` | `ctx-watch` | Path to external ctx-watch CLI |
+| `contextdoc.watchEnabled` | `true` | Drift detection on save and when the workspace opens |
+| `contextdoc.ctxRunPath` | `ctx-run` | Path to external ctx-run CLI, used only when no model is configured |
 
 ## Commands
 
