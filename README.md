@@ -3,6 +3,8 @@
 
 ContextDoc is a lightweight documentation standard for the AI-assisted development era. It provides structured context to AI coding agents — and human developers — through small YAML companion files that live alongside source code.
 
+📄 **Paper:** [ContextDoc: Minimal Context and Verifiable Specifications for Development with AI Agents](https://mautoblog.com/en/docs/contextdoc-en/) ([Italiano](https://mautoblog.com/docs/contextdoc-it/)) — the format, the tools, a case study and the known limitations, in one place.
+
 ## The Problem
 
 Source code tells you *what* the system does. It rarely tells you *why* specific constraints exist, *what* the intended behavior is across full workflows, or *what* the expected behavior is in edge cases. When an AI assistant (or a new developer) reads your code cold, this missing context leads to subtle mistakes: removing a constraint that looks redundant but isn't, or generating code that passes unit tests but violates business rules.
@@ -69,6 +71,8 @@ The rename reflects this shift:
 - From "describe everything" → to "document only what the code can't say"
 
 **ContextDoc** is what the format actually is: lightweight context that makes AI-assisted development safer and more predictable.
+
+The original 2025 ConceptDoc paper is still available as a snapshot of the starting point: [English](https://mautoblog.com/en/docs/conceptdoc-en/), [Italiano](https://mautoblog.com/docs/conceptdoc-it/).
 
 ## Getting Started
 

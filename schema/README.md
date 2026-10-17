@@ -4,6 +4,8 @@ ContextDoc files (`.ctx`) are lightweight YAML companions to source files. They 
 
 **Philosophy:** write only what would genuinely surprise or mislead an AI (or a new developer) reading the code cold. Less is more.
 
+For the rationale behind the format and its tools, see the [ContextDoc paper](https://mautoblog.com/en/docs/contextdoc-en/) ([Italiano](https://mautoblog.com/docs/contextdoc-it/)).
+
 ## Format
 
 YAML. Files live alongside the source: `service.py` → `service.py.ctx`.
