@@ -97,6 +97,16 @@ ContextDoc is a documentation standard for AI-assisted development. `.ctx` files
 
 Learn more at [github.com/Mauto82/contextdoc](https://github.com/Mauto82/contextdoc).
 
+## Development
+
+```bash
+npm ci
+npm run compile
+npm run test:smoke   # packages the .vsix and runs it in a clean VS Code (see test/smoke)
+```
+
+Set `CONTEXTDOC_TEST_MODEL` (e.g. `ollama/gemma4:e2b`) to include a conceptual-test run. On Linux, run the smoke test under `xvfb-run`.
+
 ## License
 
 MIT

@@ -30,3 +30,6 @@ out/
 
 # VS Code extension packaging
 *.vsix
+
+# VS Code test downloads (vscode-extension smoke test)
+.vscode-test/

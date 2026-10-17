@@ -31,6 +31,12 @@ ContextDoc is a documentation standard. The main deliverables are:
 - Include a `CLAUDE.md` in the example project — it demonstrates how ContextDoc and operational instructions work together
 - Include a `README.md` explaining the example
 
+## Before committing
+
+- Python tools: `python -m pytest -q` in `tools/ctx-run` and `tools/ctx-watch`
+- VS Code extension: `npm run test:smoke` in `vscode-extension` — it tests the packaged `.vsix`, not the sources (0.1.0 shipped without its `yaml` dependency and never activated)
+- CI runs both on every push and pull request
+
 ## When modifying tools/ctx-run/
 
 - `ctx_run.py` must have a corresponding `ctx_run.py.ctx` — keep it in sync
