@@ -2,11 +2,14 @@ purpose: "File watcher that warns when source files change without their .ctx co
 
 tensions:
   - "grace_period defaults to 300s to avoid false positives during rapid edits — developers who want strict mode can pass --grace 0, but the default should not be lowered"
-  - "status uses filesystem mtime, watch uses in-memory monotonic timestamps — the two commands can disagree for the same file in the same session; this is intentional: status reflects disk state, watch reflects session activity"
+  - "status uses git history inside a repository (mtime only outside git or with --mtime) — mtimes are meaningless after a clone, checkout or rebase; a source drifts when commits after the last .ctx commit changed it, or when it is dirty and its .ctx is not"
+  - "watch uses in-memory monotonic timestamps, not git — it reports session activity at save time, so it can disagree with status for the same file; this is intentional"
+  - "a full git scan never reports a missing .ctx — ContextDoc expects a .ctx only where it adds value; missing .ctx files are reported only for explicit lists (--changed-files, --base), as in CI"
+  - "GitHistory is built from one git log and one git status for the whole tree — per-file git calls would be too slow on large repositories"
   - "reported dict tracks the monotonic time of the last report per file — a file re-triggers if its source was modified after the last report, so rapid edit→fix→edit cycles are correctly caught"
   - "on_created is handled alongside on_modified — editors that write via tmp+rename (e.g. vim, most IDEs) emit created events on the final file, not modified"
   - "no persistent log — drift state is in-memory only; restarting ctx-watch resets all tracking"
-  - "--changed-files bypasses the mtime/since filter entirely — in CI, fresh clones have unreliable mtimes; the file list from git diff is the only reliable source of truth"
+  - "--changed-files and --base bypass the --since window — they check exactly the listed (or changed since REF) files; --base uses the merge base (REF...HEAD) plus uncommitted files"
   - "--ignore-dir extends SKIP_DIRS without replacing it — builtin skip dirs are always active; custom dirs are additive"
   - ".ctxignore is loaded once at startup from the root of the watched path — patterns use fnmatch glob syntax; patterns without '/' are matched against filename only, patterns with '/' against the relative path from root; restarting ctx-watch is required to pick up edits to .ctxignore"
   - "--reverse identifies specs without source by stripping .ctx suffix and checking extension — project.ctx has no recognized extension before .ctx so it is correctly skipped"
@@ -15,7 +18,8 @@ tensions:
 workflows:
   watch_drift: "Observer.start() → sleep(5) loop → drift_files() → for each new drift: compare changed_at vs last reported → print ⚠ warning"
   watch_intent: "same loop → intent_files() → for each unimplemented spec: print → signal → KeyboardInterrupt → Observer.stop() → summary"
-  status_mtime: "os.walk(root, skip_dirs) → filter by extension and mtime cutoff → compare source mtime vs ctx mtime → print drift list → exit 1 if any drift"
-  status_ci: "--changed-files splits input → for each matching source file → compare mtime vs ctx mtime → print drift list → exit 1 if any drift"
+  status_git: "GitHistory.load(root) → os.walk(root, skip_dirs) → for each source with a .ctx: dirty check, then commits on the source after the last .ctx commit → print drift list → exit 1 if any drift"
+  status_mtime: "outside git or --mtime: os.walk → filter by extension and --since cutoff → compare source mtime vs ctx mtime → print drift list → exit 1 if any drift"
+  status_ci: "--base REF (git diff REF...HEAD + dirty) or --changed-files → for each watched source: missing .ctx or drift (git, else mtime) → exit 1 if any"
   status_reverse: "--reverse walks .ctx files → strips .ctx suffix → checks extension filter → reports missing or lagging source → exit 1 if any"
   ctx_detected: "on_modified/on_created for *.ctx → record_ctx(source) → if source missing: record_intent(source)"

@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- **Drift from git history** inside a repository, like `ctx-watch status`: a source drifts when commits after the last `.ctx` commit changed it, or when it has uncommitted changes and its `.ctx` doesn't. Modification times only outside git (they say nothing after a clone or checkout).
+
 ## 0.1.2
 
 - **Setup wizard rewritten around where the model runs.** No model is set until you pick one. Two suggestions first, by RAM: `ollama/gemma4:e2b` locally from 16 GB (7.5 GB download, ~9 GB of RAM in use, free and offline, a bit less accurate), `ollama/gemma4:cloud` below (nothing to download, needs an Ollama account). Missing models can be pulled from the wizard, with progress and cancel. Other Ollama models are listed with size and estimated RAM; models over half your RAM are flagged and need confirmation. Paid APIs are a separate, clearly labelled choice, cheapest models first. The wizard ends with a test call.

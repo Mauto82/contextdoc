@@ -46,7 +46,7 @@ Ollama models are called through Ollama's native API with a context sized to the
 
 ### Drift Detection
 
-Built in, same rules as `ctx-watch` (no Python, no CLI): a source file drifts when its `.ctx` companion is older than the source. `.ctxignore` patterns are honoured.
+Built in, same rules as `ctx-watch status` (no Python, no CLI). Inside a git repository a source file drifts when commits after the last commit that touched its `.ctx` changed it, or when it has uncommitted changes and its `.ctx` doesn't; outside git, when its `.ctx` is older than the source. `.ctxignore` patterns are honoured.
 
 - **When the workspace opens**: a full scan
 - **On save**: saving a source file or its `.ctx` re-checks that file only; the other warnings stay
