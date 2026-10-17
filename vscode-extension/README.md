@@ -13,12 +13,12 @@ Run conceptual tests and detect `.ctx` drift directly in VS Code — no Python i
 
 ### Setup Wizard
 
-On first launch, a guided setup asks **where the model should run**, with two recommended defaults on top:
+On first launch, a guided setup asks **where the model should run**, with two defaults on top:
 
 | Choice | Model | Runs | Cost |
 |---|---|---|---|
-| **gemma4 on Ollama cloud** (recommended) | `ollama/gemma4:cloud` | on Ollama's servers, nothing heavy on your machine | free tier with usage limits; needs Ollama and `ollama signin` |
-| **gemma4:e2b on this machine** | `ollama/gemma4:e2b` | locally (~4.6 GB download) | free, offline, private |
+| **gemma4:e2b on this machine** (recommended) | `ollama/gemma4:e2b` | locally, downloaded once (~4.6 GB) | free, offline, private, no account |
+| **gemma4 on Ollama cloud** | `ollama/gemma4:cloud` | on Ollama's servers, nothing to download | free tier with usage limits; needs an Ollama account (`ollama signin`) |
 | Another Ollama model | any installed model | locally or on Ollama cloud | listed with its size; models bigger than half your RAM are flagged and need confirmation |
 | A paid API | Anthropic, OpenAI, OpenRouter | provider's servers | billed per call; cheapest models suggested first |
 
@@ -62,7 +62,7 @@ If you already have `ctx-run` installed, the extension falls back to the CLI whe
 |----------|--------|---------|
 | **OpenAI** | gpt-4o-mini, gpt-4o, o3-mini, ... | `OPENAI_API_KEY` or setup wizard |
 | **Anthropic** | claude-haiku-5-5, claude-sonnet-5-5, claude-opus-5-5, ... | `ANTHROPIC_API_KEY` or setup wizard |
-| **Ollama** | gemma4:cloud, gemma4:e2b, any installed model | Not required |
+| **Ollama** | gemma4:e2b, gemma4:cloud, any installed model | Not required |
 | **OpenRouter** | Any model via OpenRouter | `OPENROUTER_API_KEY` or setup wizard |
 
 ## Settings

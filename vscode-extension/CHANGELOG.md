@@ -2,7 +2,7 @@
 
 ## 0.1.2
 
-- **Setup wizard rewritten around where the model runs.** Two recommended defaults first: `ollama/gemma4:cloud` (Ollama cloud, nothing heavy on your machine) and `ollama/gemma4:e2b` (local, ~4.6 GB). Missing models can be pulled from the wizard, with progress and cancel. Other Ollama models are listed from your installation with their size; models over half your RAM are flagged and need confirmation. Paid APIs are a separate, clearly labelled choice, cheapest models first. The wizard ends with a test call.
+- **Setup wizard rewritten around where the model runs.** Two defaults first: `ollama/gemma4:e2b` (recommended: local, ~4.6 GB downloaded once, no account) and `ollama/gemma4:cloud` (Ollama cloud, nothing to download, needs an Ollama account). Missing models can be pulled from the wizard, with progress and cancel. Other Ollama models are listed from your installation with their size; models over half your RAM are flagged and need confirmation. Paid APIs are a separate, clearly labelled choice, cheapest models first. The wizard ends with a test call.
 - **Result cache**, as in ctx-run: unchanged scenario + source + model = no new call. New command `ContextDoc: Clear Test Results Cache`.
 - **Cost confirmation** before running the whole workspace or with a heavy local model: number of LLM calls, cached results, where the model runs (`contextdoc.confirmRuns` to turn it off).
 - **Cancellable runs**: the request in flight is aborted, so a local model stops at once. Progress shows the scenario count.

@@ -1,7 +1,7 @@
 /**
  * Setup wizard: where the model runs → which model → API key (cloud providers only) → test call.
- * The two recommended defaults come first: gemma4 on Ollama's cloud (nothing runs on this
- * machine) and gemma4:e2b locally (the lightest gemma4, ~4.6 GB). Installed Ollama models are
+ * The two defaults come first: gemma4:e2b locally (recommended: the lightest gemma4, ~4.6 GB,
+ * no account) and gemma4 on Ollama's cloud (nothing to download, needs an Ollama account). Installed Ollama models are
  * listed with their size, and the ones too heavy for this machine's RAM are flagged.
  * The model goes in the settings, the API key in VS Code's SecretStorage.
  */
@@ -62,16 +62,16 @@ export async function runSetupWizard(secrets: vscode.SecretStorage): Promise<boo
   const where = await vscode.window.showQuickPick<WhereItem>(
     [
       {
-        label: '$(cloud) gemma4 on Ollama cloud',
+        label: '$(device-desktop) gemma4:e2b on this machine',
         description: 'recommended',
-        detail: `${DEFAULT_CLOUD_MODEL} — runs on Ollama's servers, nothing heavy on this machine. Free tier with usage limits; needs Ollama installed and \`ollama signin\`.`,
-        action: 'default-cloud',
+        detail: `${DEFAULT_LOCAL_MODEL} — the lightest gemma4, downloaded once (~4.6 GB). Free, offline, private, no account needed.`,
+        action: 'default-local',
       },
       {
-        label: '$(device-desktop) gemma4:e2b on this machine',
-        description: 'recommended for offline use',
-        detail: `${DEFAULT_LOCAL_MODEL} — the lightest gemma4 (~4.6 GB download). Free, private, uses your CPU/GPU and RAM.`,
-        action: 'default-local',
+        label: '$(cloud) gemma4 on Ollama cloud',
+        description: 'nothing to download',
+        detail: `${DEFAULT_CLOUD_MODEL} — runs on Ollama's servers, nothing heavy on this machine. Free tier with usage limits; needs an Ollama account (\`ollama signin\`).`,
+        action: 'default-cloud',
       },
       { label: '', kind: vscode.QuickPickItemKind.Separator, action: 'ollama' },
       {
