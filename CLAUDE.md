@@ -37,6 +37,11 @@ ContextDoc is a documentation standard. The main deliverables are:
 - A new tool module or spec file must be added to `[tool.hatch.build.targets.wheel.force-include]`, or the installed commands won't find it (CI builds the wheel and runs the commands from a clean venv)
 - Releases: bump `version` in `pyproject.toml`, push a `vX.Y.Z` tag; `.github/workflows/release.yml` publishes to PyPI (trusted publishing)
 
+## Benchmarks
+
+- `bench/agents`: Claude Code on tasks that conflict with tensions, with and without `.ctx` (costs model usage: run it on purpose, not in CI)
+- `bench/ctx-run-models`: how well a model judges conceptual tests; `ground_truth.json` must change if the examples change
+
 ## Before committing
 
 - Python tools: `python -m pytest -q` in `tools/ctx-run`, `tools/ctx-watch`, `tools/ctx-mcp`, `tools/ctx-lint` and `integrations/claude-code`; `.ctx` files must pass `ctx_lint.py --strict`
