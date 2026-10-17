@@ -30,7 +30,7 @@ The model in use is always shown in the status bar: click it to change. Re-run a
 
 ### Cost control
 
-- **Cache**: a scenario's result is reused while the scenario, the source file and the model are unchanged. Clear it with `ContextDoc: Clear Test Results Cache`.
+- **Cache**: a scenario's result is reused while the scenario, the source file and the model are unchanged. The cache is the one of the `ctx-run` CLI (`~/.cache/ctx-run/cache.json`), so results computed by either are reused by both. Clear it with `ContextDoc: Clear Test Results Cache`.
 - **Confirmation**: before running the whole workspace (or with a model heavy for this machine) the extension shows how many LLM calls the run will make, how many results are cached, and where the model runs. Turn it off with `contextdoc.confirmRuns`.
 - **Cancel**: every run can be stopped from its notification; the request in flight is aborted too, so a local model stops working immediately.
 

@@ -1,0 +1,102 @@
+{
+  "basic": {
+    "system": "You are a code behavior analyzer. Your job is to reason about whether source code correctly implements described behaviors — without executing the code.\n\nYou will be given source code and a test scenario with sequential steps (action + expected outcome). For each step, reason about whether the source code, as written, would produce the expected outcome.\n\nRespond with valid JSON only. No explanation outside the JSON object. No markdown fences.",
+    "user": "Source file: svc/f.py\n```python\ndef f(x):\n    if x < 0:\n        raise ValueError\n    return x + 1\n\n```\n\nScenario: \"Basic flow\"\nSteps:\n1. action: \"call f(1)\"\n   expect: \"returns 2\"\n2. action: \"call f(-1)\"\n   expect: \"raises ValueError\"\n\nFor each step, evaluate whether the source code produces the expected outcome.\n\nRespond with this exact JSON structure:\n{\n  \"overall\": true or false,\n  \"steps\": [\n    {\n      \"action\": \"the action text\",\n      \"passed\": true or false,\n      \"explanation\": \"one sentence, max 25 words\"\n    }\n  ]\n}\n\nRules:\n- \"overall\" must be true only if ALL steps pass\n- Include one entry per step, in the same order\n- \"explanation\" is always required, even for passing steps\n- Do not include any text outside the JSON object",
+    "fix": "Source file: svc/f.py\n```python\ndef f(x):\n    if x < 0:\n        raise ValueError\n    return x + 1\n\n```\n\nScenario \"Basic flow\" has the following failing steps:\n\nSuggest the minimal code change that would make these failing steps pass. Be specific: name the function or method, and describe exactly what to add, change, or remove. Reply in 2-4 sentences only. No code blocks needed.",
+    "key": "15e5a4dfc9a8297252e729215a5b75fa9d333b4f823e66f2433902cba605270a",
+    "result": {
+      "name": "Basic flow",
+      "overall_passed": true,
+      "error": null,
+      "steps": [
+        {
+          "action": "call f(1)",
+          "expect": "returns 2",
+          "passed": true,
+          "explanation": "1 + 1 = 2"
+        },
+        {
+          "action": "call f(-1)",
+          "expect": "raises ValueError",
+          "passed": true,
+          "explanation": "negative input raises"
+        }
+      ]
+    }
+  },
+  "unicode-and-fenced-answer": {
+    "system": "You are a code behavior analyzer. Your job is to reason about whether source code correctly implements described behaviors — without executing the code.\n\nYou will be given source code and a test scenario with sequential steps (action + expected outcome). For each step, reason about whether the source code, as written, would produce the expected outcome.\n\nRespond with valid JSON only. No explanation outside the JSON object. No markdown fences.",
+    "user": "Source file: users.ts\n```typescript\nexport const create = (n: string) => ({ n, status: 'attivo' });\n\n```\n\nScenario: \"Città «test» — ✓\"\nSteps:\n1. action: \"crea un utente con nome “Zoë”\"\n   expect: \"status 'attivo'\"\n\nFor each step, evaluate whether the source code produces the expected outcome.\n\nRespond with this exact JSON structure:\n{\n  \"overall\": true or false,\n  \"steps\": [\n    {\n      \"action\": \"the action text\",\n      \"passed\": true or false,\n      \"explanation\": \"one sentence, max 25 words\"\n    }\n  ]\n}\n\nRules:\n- \"overall\" must be true only if ALL steps pass\n- Include one entry per step, in the same order\n- \"explanation\" is always required, even for passing steps\n- Do not include any text outside the JSON object",
+    "fix": "Source file: users.ts\n```typescript\nexport const create = (n: string) => ({ n, status: 'attivo' });\n\n```\n\nScenario \"Città «test» — ✓\" has the following failing steps:\n- action: \"crea un utente con nome “Zoë”\"\n  expected: \"status 'attivo'\"\n  analysis: \"status is set\"\n\nSuggest the minimal code change that would make these failing steps pass. Be specific: name the function or method, and describe exactly what to add, change, or remove. Reply in 2-4 sentences only. No code blocks needed.",
+    "key": "40b1d02ebb8c8b4afe7f56b35578273229337fa26cf12e82358ad5602549184e",
+    "result": {
+      "name": "Città «test» — ✓",
+      "overall_passed": false,
+      "error": null,
+      "steps": [
+        {
+          "action": "crea un utente con nome “Zoë”",
+          "expect": "status 'attivo'",
+          "passed": false,
+          "explanation": "status is set"
+        }
+      ]
+    }
+  },
+  "missing-source-and-step": {
+    "system": "You are a code behavior analyzer. Your job is to reason about whether source code correctly implements described behaviors — without executing the code.\n\nYou will be given source code and a test scenario with sequential steps (action + expected outcome). For each step, reason about whether the source code, as written, would produce the expected outcome.\n\nRespond with valid JSON only. No explanation outside the JSON object. No markdown fences.",
+    "user": "Source file: NOT AVAILABLE (source file not found: gone.go)\nNote: since source is unavailable, mark all steps as failed with explanation 'source code not available for analysis'.\n\nScenario: \"No source\"\nSteps:\n1. action: \"a\"\n   expect: \"b\"\n2. action: \"c\"\n   expect: \"\"\n\nFor each step, evaluate whether the source code produces the expected outcome.\n\nRespond with this exact JSON structure:\n{\n  \"overall\": true or false,\n  \"steps\": [\n    {\n      \"action\": \"the action text\",\n      \"passed\": true or false,\n      \"explanation\": \"one sentence, max 25 words\"\n    }\n  ]\n}\n\nRules:\n- \"overall\" must be true only if ALL steps pass\n- Include one entry per step, in the same order\n- \"explanation\" is always required, even for passing steps\n- Do not include any text outside the JSON object",
+    "fix": "Source file: NOT AVAILABLE\n\nScenario \"No source\" has the following failing steps:\n- action: \"a\"\n  expected: \"b\"\n  analysis: \"source code not available for analysis\"\n- action: \"c\"\n  expected: \"\"\n  analysis: \"Step missing from LLM response\"\n\nSuggest the minimal code change that would make these failing steps pass. Be specific: name the function or method, and describe exactly what to add, change, or remove. Reply in 2-4 sentences only. No code blocks needed.",
+    "key": "90e6df4b167ca50aed10a0641b83d1cedd232c0bd42e722d0d6122caefa2586c",
+    "result": {
+      "name": "No source",
+      "overall_passed": false,
+      "error": null,
+      "steps": [
+        {
+          "action": "a",
+          "expect": "b",
+          "passed": false,
+          "explanation": "source code not available for analysis"
+        },
+        {
+          "action": "c",
+          "expect": "",
+          "passed": false,
+          "explanation": "Step missing from LLM response"
+        }
+      ]
+    }
+  },
+  "unparsable": {
+    "system": "You are a code behavior analyzer. Your job is to reason about whether source code correctly implements described behaviors — without executing the code.\n\nYou will be given source code and a test scenario with sequential steps (action + expected outcome). For each step, reason about whether the source code, as written, would produce the expected outcome.\n\nRespond with valid JSON only. No explanation outside the JSON object. No markdown fences.",
+    "user": "Source file: unknown\n```\nx = 1\n\n```\n\nScenario: \"Bad answer\"\nSteps:\n1. action: \"only action\"\n   expect: \"\"\n\nFor each step, evaluate whether the source code produces the expected outcome.\n\nRespond with this exact JSON structure:\n{\n  \"overall\": true or false,\n  \"steps\": [\n    {\n      \"action\": \"the action text\",\n      \"passed\": true or false,\n      \"explanation\": \"one sentence, max 25 words\"\n    }\n  ]\n}\n\nRules:\n- \"overall\" must be true only if ALL steps pass\n- Include one entry per step, in the same order\n- \"explanation\" is always required, even for passing steps\n- Do not include any text outside the JSON object",
+    "fix": "Source file: unknown\n```\nx = 1\n\n```\n\nScenario \"Bad answer\" has the following failing steps:\n\nSuggest the minimal code change that would make these failing steps pass. Be specific: name the function or method, and describe exactly what to add, change, or remove. Reply in 2-4 sentences only. No code blocks needed.",
+    "key": "bc9e3330f2c662f7ad1c36413ac7b32b2b6bb746682faa9aae749bdd5b1600f7",
+    "result": {
+      "name": "Bad answer",
+      "overall_passed": false,
+      "error": "LLM response could not be parsed. Raw: I think it passes, but I am not sure.",
+      "steps": []
+    }
+  },
+  "placeholder-lookalikes": {
+    "system": "You are a code behavior analyzer. Your job is to reason about whether source code correctly implements described behaviors — without executing the code.\n\nYou will be given source code and a test scenario with sequential steps (action + expected outcome). For each step, reason about whether the source code, as written, would produce the expected outcome.\n\nRespond with valid JSON only. No explanation outside the JSON object. No markdown fences.",
+    "user": "Source file: t.py\n```python\ns = '${source}'\n\n```\n\nScenario: \"Template ${name}\"\nSteps:\n1. action: \"use ${expect} literally\"\n   expect: \"keeps ${n}\"\n\nFor each step, evaluate whether the source code produces the expected outcome.\n\nRespond with this exact JSON structure:\n{\n  \"overall\": true or false,\n  \"steps\": [\n    {\n      \"action\": \"the action text\",\n      \"passed\": true or false,\n      \"explanation\": \"one sentence, max 25 words\"\n    }\n  ]\n}\n\nRules:\n- \"overall\" must be true only if ALL steps pass\n- Include one entry per step, in the same order\n- \"explanation\" is always required, even for passing steps\n- Do not include any text outside the JSON object",
+    "fix": "Source file: t.py\n```python\ns = '${source}'\n\n```\n\nScenario \"Template ${name}\" has the following failing steps:\n\nSuggest the minimal code change that would make these failing steps pass. Be specific: name the function or method, and describe exactly what to add, change, or remove. Reply in 2-4 sentences only. No code blocks needed.",
+    "key": "4f83813e4e020a3c92aa163b514001f622a4a8ef985c02ccfc1e362fbdbf660a",
+    "result": {
+      "name": "Template ${name}",
+      "overall_passed": true,
+      "error": null,
+      "steps": [
+        {
+          "action": "use ${expect} literally",
+          "expect": "keeps ${n}",
+          "passed": true,
+          "explanation": "ok"
+        }
+      ]
+    }
+  }
+}

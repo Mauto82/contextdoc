@@ -99,6 +99,33 @@ def collect_ctx_files(target: str) -> list[str]:
 
 
 # ---------------------------------------------------------------------------
+# Runner spec: prompts, languages, result texts and cache rules shared with the
+# VS Code extension (spec/runner/runner-spec.json in the repository)
+# ---------------------------------------------------------------------------
+
+def _load_spec() -> dict:
+    here = os.path.dirname(os.path.abspath(__file__))
+    candidates = [
+        os.environ.get("CTX_RUNNER_SPEC"),
+        os.path.join(here, "runner-spec.json"),                         # installed next to the module
+        os.path.join(here, "..", "..", "spec", "runner", "runner-spec.json"),  # repository checkout
+    ]
+    for path in candidates:
+        if path and os.path.isfile(path):
+            with open(path, encoding="utf-8") as f:
+                return json.load(f)
+    raise RuntimeError("runner-spec.json not found (set CTX_RUNNER_SPEC to its path)")
+
+
+_SPEC = _load_spec()
+
+
+def _fill(template: str, **values: object) -> str:
+    """Replace ${name} placeholders in one pass: inserted values are never scanned again."""
+    return re.sub(r"\$\{(\w+)\}", lambda m: str(values[m.group(1)]) if m.group(1) in values else m.group(0), template)
+
+
+# ---------------------------------------------------------------------------
 # Loading
 # ---------------------------------------------------------------------------
 
@@ -108,11 +135,7 @@ def load_ctx(ctx_path: str) -> dict:
         return yaml.safe_load(f) or {}
 
 
-_LANG_MAP = {
-    ".py": "python", ".js": "javascript", ".ts": "typescript",
-    ".go": "go", ".rb": "ruby", ".rs": "rust", ".java": "java",
-    ".cs": "csharp", ".php": "php", ".swift": "swift", ".kt": "kotlin",
-}
+_LANG_MAP: dict[str, str] = _SPEC["languages"]
 
 
 def resolve_source(ctx_path: str) -> tuple[str | None, str | None, str | None]:
@@ -140,7 +163,7 @@ def detect_language(source_path: str | None) -> str:
 # Cache
 # ---------------------------------------------------------------------------
 
-_CACHE_VERSION = 1
+_CACHE_VERSION = _SPEC["cache"]["version"]
 
 
 def _cache_path() -> str:
@@ -223,14 +246,12 @@ def _scenario_from_cache_entry(entry: dict) -> ScenarioResult:
 # ---------------------------------------------------------------------------
 
 def build_system_prompt() -> str:
-    return (
-        "You are a code behavior analyzer. "
-        "Your job is to reason about whether source code correctly implements described behaviors — "
-        "without executing the code.\n\n"
-        "You will be given source code and a test scenario with sequential steps (action + expected outcome). "
-        "For each step, reason about whether the source code, as written, would produce the expected outcome.\n\n"
-        "Respond with valid JSON only. No explanation outside the JSON object. No markdown fences."
-    )
+    return _SPEC["evaluate"]["system"]
+
+
+def _source_block(templates: dict, source_path: str | None, source_content: str | None, language: str) -> str:
+    fence = f"```{language}" if language else "```"
+    return _fill(templates["source"], label=source_path or "unknown", fence=fence, source=source_content)
 
 
 def build_user_message(
@@ -240,53 +261,24 @@ def build_user_message(
     source_warning: str | None,
     language: str,
 ) -> str:
+    t = _SPEC["evaluate"]
     parts: list[str] = []
 
     # Source section
     if source_content:
-        label = source_path or "unknown"
-        fence = f"```{language}" if language else "```"
-        parts.append(f"Source file: {label}\n{fence}\n{source_content}\n```")
+        parts.append(_source_block(t, source_path, source_content, language))
     else:
-        note = source_warning or "source file unavailable"
-        parts.append(f"Source file: NOT AVAILABLE ({note})")
-        parts.append(
-            "Note: since source is unavailable, mark all steps as failed "
-            "with explanation 'source code not available for analysis'."
-        )
+        parts.append(_fill(t["sourceMissing"], note=source_warning or t["sourceMissingDefaultNote"]))
+        parts.append(t["sourceMissingInstruction"])
 
     # Scenario
-    name = scenario.get("name", "unnamed")
-    steps = scenario.get("steps", [])
-    parts.append(f'\nScenario: "{name}"')
-    parts.append("Steps:")
-    for i, step in enumerate(steps, 1):
-        parts.append(
-            f'{i}. action: "{step.get("action", "")}"\n'
-            f'   expect: "{step.get("expect", "")}"'
-        )
+    parts.append(_fill(t["scenario"], name=scenario.get("name", "unnamed")))
+    parts.append(t["stepsHeader"])
+    for i, step in enumerate(scenario.get("steps", []), 1):
+        parts.append(_fill(t["step"], n=i, action=step.get("action", ""), expect=step.get("expect", "")))
 
     # Response format instruction
-    parts.append(
-        '\nFor each step, evaluate whether the source code produces the expected outcome.\n\n'
-        "Respond with this exact JSON structure:\n"
-        '{\n'
-        '  "overall": true or false,\n'
-        '  "steps": [\n'
-        '    {\n'
-        '      "action": "the action text",\n'
-        '      "passed": true or false,\n'
-        '      "explanation": "one sentence, max 25 words"\n'
-        '    }\n'
-        '  ]\n'
-        '}\n\n'
-        'Rules:\n'
-        '- "overall" must be true only if ALL steps pass\n'
-        '- Include one entry per step, in the same order\n'
-        '- "explanation" is always required, even for passing steps\n'
-        '- Do not include any text outside the JSON object'
-    )
-
+    parts.append(t["instructions"])
     return "\n".join(parts)
 
 
@@ -298,29 +290,21 @@ def build_fix_prompt(
     language: str,
 ) -> str:
     """Build the prompt for --fix: asks the LLM what to change to make the failing steps pass."""
+    t = _SPEC["fix"]
     parts: list[str] = []
 
     if source_content:
-        label = source_path or "unknown"
-        fence = f"```{language}" if language else "```"
-        parts.append(f"Source file: {label}\n{fence}\n{source_content}\n```")
+        parts.append(_source_block(t, source_path, source_content, language))
     else:
-        parts.append("Source file: NOT AVAILABLE")
+        parts.append(t["sourceMissing"])
 
-    name = scenario.get("name", "unnamed")
-    parts.append(f'\nScenario "{name}" has the following failing steps:')
+    parts.append(_fill(t["header"], name=scenario.get("name", "unnamed")))
     for step in failed_steps:
-        parts.append(f'- action: "{step.action}"')
-        parts.append(f'  expected: "{step.expect}"')
+        parts.append(_fill(t["step"], action=step.action, expect=step.expect))
         if step.explanation:
-            parts.append(f'  analysis: "{step.explanation}"')
+            parts.append(_fill(t["analysis"], explanation=step.explanation))
 
-    parts.append(
-        "\nSuggest the minimal code change that would make these failing steps pass. "
-        "Be specific: name the function or method, and describe exactly what to add, change, or remove. "
-        "Reply in 2-4 sentences only. No code blocks needed."
-    )
-
+    parts.append(t["instructions"])
     return "\n".join(parts)
 
 
@@ -335,8 +319,8 @@ def call_llm(model: str, system: str, user: str, timeout: int = 60) -> str:
             {"role": "system", "content": system},
             {"role": "user", "content": user},
         ],
-        temperature=0,
-        max_tokens=4096,  # room for reasoning models, whose thinking counts against the limit
+        temperature=_SPEC["llm"]["temperature"],
+        max_tokens=_SPEC["llm"]["maxTokens"],  # room for reasoning models, whose thinking counts against the limit
         timeout=timeout,
     )
     return response.choices[0].message.content or ""
@@ -390,7 +374,7 @@ def build_scenario_result(
         return ScenarioResult(
             name=name,
             overall_passed=False,
-            error=f"LLM response could not be parsed. Raw: {raw_response[:200]}",
+            error=_fill(_SPEC["results"]["unparsable"], raw=raw_response[:_SPEC["results"]["unparsableRawChars"]]),
         )
 
     llm_steps = parsed.get("steps", [])
@@ -403,7 +387,7 @@ def build_scenario_result(
             explanation = llm_step.get("explanation", "")
         else:
             passed = False
-            explanation = "Step missing from LLM response"
+            explanation = _SPEC["results"]["stepMissing"]
 
         step_results.append(StepResult(
             action=expected.get("action", ""),
@@ -454,7 +438,7 @@ def run_scenario(
         return ScenarioResult(
             name=scenario.get("name", "unnamed"),
             overall_passed=False,
-            error=f"LLM error: {exc}",
+            error=_fill(_SPEC["results"]["llmError"], error=exc),
         )
     parsed = parse_llm_response(raw, len(scenario.get("steps", [])))
     result = build_scenario_result(scenario, raw, parsed)
@@ -467,11 +451,7 @@ def run_scenario(
     # --fix: ask for a fix suggestion for failing scenarios
     if fix and not result.overall_passed and result.error is None:
         failed_steps = [s for s in result.steps if not s.passed]
-        fix_system = (
-            "You are a code improvement advisor. "
-            "Given failing conceptual test steps and source code, "
-            "suggest the minimal code change to make the tests pass."
-        )
+        fix_system = _SPEC["fix"]["system"]
         fix_user = build_fix_prompt(scenario, failed_steps, source_path, source_content, language)
         try:
             result.fix_suggestion = call_llm(model, fix_system, fix_user, timeout=timeout)

@@ -37,6 +37,11 @@ ContextDoc is a documentation standard. The main deliverables are:
 - VS Code extension: `npm run test:smoke` in `vscode-extension` — it tests the packaged `.vsix`, not the sources (0.1.0 shipped without its `yaml` dependency and never activated)
 - CI runs both on every push and pull request
 
+## When modifying the runner (ctx-run or the extension's runner)
+
+- Prompts, language map, LLM settings, result texts and cache rules live in `spec/runner/runner-spec.json`, shared by both runners — never copy them into code
+- After a change: `python spec/runner/fixtures/generate.py`, then both parity suites (`pytest` in `tools/ctx-run`, `npm run test:unit` in `vscode-extension`)
+
 ## When modifying tools/ctx-run/
 
 - `ctx_run.py` must have a corresponding `ctx_run.py.ctx` — keep it in sync

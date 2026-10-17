@@ -95,7 +95,7 @@ For Ollama, make sure the Ollama server is running (`ollama serve`) and the mode
 --fix                 After a failing scenario, ask the LLM to suggest a fix
 ```
 
-Results are cached in `~/.cache/ctx-run/cache.json` by default. The cache key is a hash of the scenario definition, source code, and model — so the cache invalidates automatically when any of these change. Use `ctx-run clear-cache` to wipe it manually.
+Results are cached in `~/.cache/ctx-run/cache.json` by default (or under `$XDG_CACHE_HOME`); the VS Code extension uses the same cache, so results are shared. Prompts and cache rules come from [`spec/runner`](../../spec/runner/). The cache key is a hash of the scenario definition, source code, and model — so the cache invalidates automatically when any of these change. Use `ctx-run clear-cache` to wipe it manually.
 
 ## Exit codes
 

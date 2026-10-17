@@ -8,17 +8,14 @@ import * as path from 'path';
 import * as yaml from 'yaml';
 import { resolveProvider, LlmMessage, CancelledError } from './llm';
 import { ResultCache, cacheKey } from './cache';
+import { SPEC, fill } from './spec';
 import { RunResult, FileResult, ScenarioResult, StepResult } from './runner';
 
 // ---------------------------------------------------------------------------
-// Language map
+// Language map (from the shared runner spec)
 // ---------------------------------------------------------------------------
 
-const LANG_MAP: Record<string, string> = {
-  '.py': 'python', '.js': 'javascript', '.ts': 'typescript',
-  '.go': 'go', '.rb': 'ruby', '.rs': 'rust', '.java': 'java',
-  '.cs': 'csharp', '.php': 'php', '.swift': 'swift', '.kt': 'kotlin',
-};
+const LANG_MAP: Record<string, string> = SPEC.languages;
 
 const SKIP_DIRS = new Set(['.git', '.venv', '__pycache__', 'node_modules', '.mypy_cache']);
 
@@ -88,19 +85,9 @@ function detectLanguage(sourcePath: string | null): string {
 }
 
 // ---------------------------------------------------------------------------
-// Prompt construction (mirrors ctx_run.py exactly)
+// Prompt construction: templates from the shared runner spec, same assembly as ctx_run.py
+// (the parity tests in test/unit check that both produce identical prompts)
 // ---------------------------------------------------------------------------
-
-function buildSystemPrompt(): string {
-  return (
-    'You are a code behavior analyzer. ' +
-    'Your job is to reason about whether source code correctly implements described behaviors — ' +
-    'without executing the code.\n\n' +
-    'You will be given source code and a test scenario with sequential steps (action + expected outcome). ' +
-    'For each step, reason about whether the source code, as written, would produce the expected outcome.\n\n' +
-    'Respond with valid JSON only. No explanation outside the JSON object. No markdown fences.'
-  );
-}
 
 interface TestStep {
   action?: string;
@@ -112,59 +99,56 @@ interface TestScenario {
   steps?: TestStep[];
 }
 
-function buildUserMessage(
+export function buildSystemPrompt(): string {
+  return SPEC.evaluate.system;
+}
+
+function sourceBlock(template: string, sourcePath: string | null, sourceContent: string, language: string): string {
+  const fence = language ? '```' + language : '```';
+  return fill(template, { label: sourcePath ?? 'unknown', fence, source: sourceContent });
+}
+
+export function buildUserMessage(
   scenario: TestScenario,
   sourcePath: string | null,
   sourceContent: string | null,
   sourceWarning: string | null,
   language: string,
 ): string {
+  const t = SPEC.evaluate;
   const parts: string[] = [];
-
   if (sourceContent) {
-    const label = sourcePath ?? 'unknown';
-    const fence = language ? '```' + language : '```';
-    parts.push(`Source file: ${label}\n${fence}\n${sourceContent}\n\`\`\``);
+    parts.push(sourceBlock(t.source, sourcePath, sourceContent, language));
   } else {
-    const note = sourceWarning ?? 'source file unavailable';
-    parts.push(`Source file: NOT AVAILABLE (${note})`);
-    parts.push(
-      'Note: since source is unavailable, mark all steps as failed ' +
-      "with explanation 'source code not available for analysis'."
-    );
+    parts.push(fill(t.sourceMissing, { note: sourceWarning ?? t.sourceMissingDefaultNote }));
+    parts.push(t.sourceMissingInstruction);
   }
-
-  const name = scenario.name ?? 'unnamed';
-  const steps = scenario.steps ?? [];
-  parts.push(`\nScenario: "${name}"`);
-  parts.push('Steps:');
-  steps.forEach((step, i) => {
-    parts.push(
-      `${i + 1}. action: "${step.action ?? ''}"\n` +
-      `   expect: "${step.expect ?? ''}"`
-    );
+  parts.push(fill(t.scenario, { name: scenario.name ?? 'unnamed' }));
+  parts.push(t.stepsHeader);
+  (scenario.steps ?? []).forEach((step, i) => {
+    parts.push(fill(t.step, { n: i + 1, action: step.action ?? '', expect: step.expect ?? '' }));
   });
+  parts.push(t.instructions);
+  return parts.join('\n');
+}
 
-  parts.push(
-    '\nFor each step, evaluate whether the source code produces the expected outcome.\n\n' +
-    'Respond with this exact JSON structure:\n' +
-    '{\n' +
-    '  "overall": true or false,\n' +
-    '  "steps": [\n' +
-    '    {\n' +
-    '      "action": "the action text",\n' +
-    '      "passed": true or false,\n' +
-    '      "explanation": "one sentence, max 25 words"\n' +
-    '    }\n' +
-    '  ]\n' +
-    '}\n\n' +
-    'Rules:\n' +
-    '- "overall" must be true only if ALL steps pass\n' +
-    '- Include one entry per step, in the same order\n' +
-    '- "explanation" is always required, even for passing steps\n' +
-    '- Do not include any text outside the JSON object'
-  );
-
+/** Prompt for a fix suggestion (ctx-run --fix): the failing steps and the source. */
+export function buildFixPrompt(
+  scenario: TestScenario,
+  failedSteps: Array<{ action: string; expect: string; explanation: string }>,
+  sourcePath: string | null,
+  sourceContent: string | null,
+  language: string,
+): string {
+  const t = SPEC.fix;
+  const parts: string[] = [];
+  parts.push(sourceContent ? sourceBlock(t.source, sourcePath, sourceContent, language) : t.sourceMissing);
+  parts.push(fill(t.header, { name: scenario.name ?? 'unnamed' }));
+  for (const step of failedSteps) {
+    parts.push(fill(t.step, { action: step.action, expect: step.expect }));
+    if (step.explanation) { parts.push(fill(t.analysis, { explanation: step.explanation })); }
+  }
+  parts.push(t.instructions);
   return parts.join('\n');
 }
 
@@ -172,7 +156,7 @@ function buildUserMessage(
 // Response parsing (3-layer like Python version)
 // ---------------------------------------------------------------------------
 
-function parseLlmResponse(raw: string): Record<string, unknown> | null {
+export function parseLlmResponse(raw: string): Record<string, unknown> | null {
   // Layer 1: direct parse
   try { return JSON.parse(raw); } catch {}
 
@@ -189,7 +173,7 @@ function parseLlmResponse(raw: string): Record<string, unknown> | null {
   return null;
 }
 
-function buildScenarioResult(
+export function buildScenarioResult(
   scenario: TestScenario,
   rawResponse: string,
   parsed: Record<string, unknown> | null,
@@ -201,7 +185,7 @@ function buildScenarioResult(
     return {
       name,
       overall_passed: false,
-      error: `LLM response could not be parsed. Raw: ${rawResponse.slice(0, 200)}`,
+      error: fill(SPEC.results.unparsable, { raw: rawResponse.slice(0, SPEC.results.unparsableRawChars) }),
       from_cache: false,
       fix_suggestion: null,
       steps: [],
@@ -226,7 +210,7 @@ function buildScenarioResult(
         action: expected.action ?? '',
         expect: expected.expect ?? '',
         passed: false,
-        explanation: 'Step missing from LLM response',
+        explanation: SPEC.results.stepMissing,
       });
     }
   }
@@ -284,7 +268,7 @@ async function runScenario(
     return {
       name: scenario.name ?? 'unnamed',
       overall_passed: false,
-      error: `LLM error: ${err instanceof Error ? err.message : String(err)}`,
+      error: fill(SPEC.results.llmError, { error: err instanceof Error ? err.message : String(err) }),
       from_cache: false,
       fix_suggestion: null,
       steps: [],

@@ -103,7 +103,7 @@
   },
   "scripts": {
     "vscode:prepublish": "npm run compile",
-    "compile": "tsc -p ./",
+    "compile": "tsc -p ./ && node -e \"require('fs').copyFileSync('../spec/runner/runner-spec.json', 'out/runner-spec.json')\"",
     "watch": "tsc -watch -p ./",
     "package": "vsce package",
     "test:smoke": "node test/smoke/run.js",

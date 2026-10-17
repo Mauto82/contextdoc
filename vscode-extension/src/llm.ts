@@ -7,6 +7,7 @@
 import * as https from 'https';
 import * as http from 'http';
 import { URL } from 'url';
+import { SPEC } from './spec';
 
 export interface LlmMessage {
   role: 'system' | 'user' | 'assistant';
@@ -130,9 +131,9 @@ export class OpenAIProvider implements LlmProvider {
     const body = JSON.stringify({
       model,
       messages,
-      temperature: 0,
+      temperature: SPEC.llm.temperature,
       // room for reasoning models, whose thinking counts against the limit
-      max_tokens: 4096,
+      max_tokens: SPEC.llm.maxTokens,
     });
 
     const raw = await httpRequest(url, body, headers, timeout, signal);
@@ -172,7 +173,7 @@ export class OllamaProvider implements LlmProvider {
       model,
       messages,
       stream: false,
-      options: { temperature: 0, num_ctx: contextFor(messages), num_predict: 4096 },
+      options: { temperature: SPEC.llm.temperature, num_ctx: contextFor(messages), num_predict: SPEC.llm.maxTokens },
     });
     const raw = await httpRequest(`${OLLAMA_URL}/api/chat`, body, {}, timeout, signal);
     const parsed = JSON.parse(raw);
@@ -214,8 +215,8 @@ export class AnthropicProvider implements LlmProvider {
 
     const body = JSON.stringify({
       model,
-      max_tokens: 4096,
-      temperature: 0,
+      max_tokens: SPEC.llm.maxTokens,
+      temperature: SPEC.llm.temperature,
       ...(systemMsg ? { system: systemMsg.content } : {}),
       messages: nonSystem.map((m) => ({ role: m.role, content: m.content })),
     });

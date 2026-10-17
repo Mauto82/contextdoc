@@ -44,7 +44,8 @@ function main() {
     version: process.env.VSCODE_TEST_VERSION || 'stable',
     extensionDevelopmentPath: path.join(unpacked, 'extension'),
     extensionTestsPath: path.join(__dirname, 'suite.js'),
-    extensionTestsEnv: { CONTEXTDOC_SMOKE_USER_DATA: userData, CONTEXTDOC_TEST_MODEL: process.env.CONTEXTDOC_TEST_MODEL || '' },
+    // the result cache is shared with ctx-run under $XDG_CACHE_HOME: keep it inside the test folder
+    extensionTestsEnv: { XDG_CACHE_HOME: path.join(base, 'cache'), CONTEXTDOC_TEST_MODEL: process.env.CONTEXTDOC_TEST_MODEL || '' },
     launchArgs: [ws, '--disable-extensions', '--skip-welcome', '--disable-workspace-trust',
       `--user-data-dir=${userData}`, `--extensions-dir=${path.join(base, 'ext')}`],
   });
