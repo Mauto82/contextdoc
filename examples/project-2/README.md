@@ -88,3 +88,12 @@ Expected: 13/16 steps pass, 3 scenarios fail — until the TODOs in `store.py` a
 | **project-2** | **Partial implementation as TDD spec** | **Mixed PASS/FAIL** |
 
 The key insight: `ctx-run` failures are not test infrastructure problems — they are a precise, readable list of work remaining.
+
+## Generated tests
+
+`tests/contextdoc/` holds pytest tests generated from the two `.ctx` files with `ctx-run generate`
+(run from this folder). `ctx-run verify .` runs them: `coupon.py` passes, and `store.py` fails exactly on
+the three scenarios whose wiring is still missing (coupon validation on apply, minimum order,
+`used_count`), the same report `ctx-run run` gives, but deterministic. CI checks that they stay in sync
+with the scenarios (`ctx-run generate . --check`).
+

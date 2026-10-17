@@ -47,7 +47,7 @@ ContextDoc is a documentation standard. The main deliverables are:
 - `ctx_run.py` must have a corresponding `ctx_run.py.ctx` — keep it in sync
 - The tool must remain provider-agnostic (no hardcoded Anthropic-only logic)
 - Do not add a `--temperature` flag — determinism at 0 is intentional
-- Keep the tool as a single file (`ctx_run.py`); split only if it exceeds ~500 lines
+- `ctx_run.py` is past ~500 lines: new features go in their own module (`ctx_generate.py` for generate / verify), each with its `.ctx`
 
 ## What not to do
 

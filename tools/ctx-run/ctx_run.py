@@ -739,5 +739,115 @@ def clear_cache() -> None:
         click.echo("No cache found.")
 
 
+# ---------------------------------------------------------------------------
+# generate / verify: executable tests from conceptualTests (ctx_generate.py)
+# ---------------------------------------------------------------------------
+
+_STATE_COLOR = {
+    "kept": DIM, "ok": GREEN, "generated": GREEN, "regenerated": CYAN, "removed": YELLOW,
+    "failed": RED, "missing": YELLOW, "stale": YELLOW, "orphan": YELLOW,
+    "passed": GREEN, "skipped": YELLOW, "error": RED,
+}
+
+
+def _state(state: str) -> str:
+    return c(_STATE_COLOR.get(state, ""), f"[{state.upper()}]")
+
+
+@cli.command()
+@click.argument("path")
+@click.option("--model", default=None, help="LiteLLM model string. Defaults to $CTX_MODEL or claude-haiku-5-5.")
+@click.option("--out", "out_dir", default=os.path.join("tests", "contextdoc"), show_default=True,
+              help="Folder for the generated test files.")
+@click.option("--check", is_flag=True, help="Don't generate: report missing, stale and orphaned tests (no LLM calls; exit 1 if any).")
+@click.option("--force", is_flag=True, help="Regenerate every scenario, even unchanged ones.")
+@click.option("--timeout", default=60, show_default=True, type=int, help="LLM call timeout in seconds.")
+@click.option("--no-color", is_flag=True, help="Disable ANSI colors.")
+def generate(path: str, model: str | None, out_dir: str, check: bool, force: bool, timeout: int, no_color: bool) -> None:
+    """Generate pytest tests from the conceptualTests in PATH (.ctx file or directory), kept in sync.
+
+    One file per .ctx, one block per scenario, tagged with a hash of the scenario: unchanged scenarios
+    are kept, changed ones regenerated, removed ones dropped. Only Python sources (pytest) for now.
+    """
+    import ctx_generate
+
+    global _color_enabled
+    _color_enabled = not no_color and sys.stdout.isatty()
+    resolved_model = model or os.environ.get("CTX_MODEL") or "claude-haiku-5-5"
+    try:
+        ctx_files = collect_ctx_files(path)
+    except (click.BadParameter, click.ClickException) as exc:
+        click.echo(str(exc), err=True)
+        sys.exit(2)
+
+    bad_states = {"failed", "missing", "stale", "orphan"}
+    problems = 0
+    for ctx_path in ctx_files:
+        if check:
+            report = ctx_generate.check_file(ctx_path, out_dir)
+        else:
+            report = ctx_generate.generate_file(ctx_path, resolved_model, out_dir, force, timeout)
+        label = relative_path(ctx_path)
+        if report.skipped:
+            click.echo(c(DIM, f"{label}  (skipped: {report.skipped})"))
+            continue
+        click.echo(c(BOLD, label) + c(DIM, f"  → {relative_path(report.test_path)}"))
+        for sc in report.scenarios:
+            detail = f"  {c(DIM, sc.detail)}" if sc.detail else ""
+            click.echo(f"  {_state(sc.state)} {sc.name}{detail}")
+            problems += sc.state in bad_states
+    if problems:
+        hint = "run `ctx-run generate` to update them" if check else "see the messages above"
+        click.echo(c(RED, f"{problems} scenario(s) without an up-to-date test — {hint}"))
+    sys.exit(1 if problems else 0)
+
+
+@cli.command()
+@click.argument("path")
+@click.option("--out", "out_dir", default=os.path.join("tests", "contextdoc"), show_default=True,
+              help="Folder of the generated test files.")
+@click.option("--no-color", is_flag=True, help="Disable ANSI colors.")
+def verify(path: str, out_dir: str, no_color: bool) -> None:
+    """Run the tests generated from PATH's conceptualTests and report the outcome per scenario.
+
+    Deterministic, no LLM: it runs pytest. Stale or missing tests are reported too.
+    """
+    import ctx_generate
+
+    global _color_enabled
+    _color_enabled = not no_color and sys.stdout.isatty()
+    try:
+        ctx_files = collect_ctx_files(path)
+    except (click.BadParameter, click.ClickException) as exc:
+        click.echo(str(exc), err=True)
+        sys.exit(2)
+
+    reports = [ctx_generate.check_file(p, out_dir) for p in ctx_files]
+    test_paths = sorted({r.test_path for r in reports if r.test_path and os.path.isfile(r.test_path)})
+    if not test_paths:
+        click.echo("No generated tests found — run `ctx-run generate` first.", err=True)
+        sys.exit(2)
+    outcomes = ctx_generate.verify_files(test_paths)
+
+    failed = 0
+    for report in reports:
+        if report.skipped or not report.test_path:
+            continue
+        click.echo(c(BOLD, relative_path(report.ctx_path)))
+        results = outcomes.get(report.test_path, {})
+        for sc in report.scenarios:
+            if sc.state in ("missing", "stale", "orphan"):
+                click.echo(f"  {_state(sc.state)} {sc.name}  {c(DIM, sc.detail)}")
+                failed += 1
+                continue
+            outcome = results.get(sc.name, "error")
+            why = ctx_generate.details_of_last_run.get(report.test_path, {}).get(sc.name, "")
+            click.echo(f"  {_state(outcome)} {sc.name}" + (f"  {c(DIM, why)}" if why and outcome != "passed" else ""))
+            failed += outcome in ("failed", "error")
+    click.echo("─" * 50)
+    click.echo(c(RED, f"  {failed} scenario(s) not passing") if failed else c(GREEN, "  all generated tests pass"))
+    sys.exit(1 if failed else 0)
+
+
 if __name__ == "__main__":
     cli()

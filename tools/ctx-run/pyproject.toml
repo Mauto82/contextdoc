@@ -35,4 +35,4 @@ Repository = "https://github.com/Mauto82/contextdoc"
 ctx-run = "ctx_run:cli"
 
 [tool.setuptools]
-py-modules = ["ctx_run"]
+py-modules = ["ctx_run", "ctx_generate"]

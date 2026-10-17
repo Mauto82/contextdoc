@@ -35,6 +35,9 @@ jobs:
       - name: ctx-watch tests
         working-directory: tools/ctx-watch
         run: python -m pytest -q
+      - name: Generated tests of examples/project-2 in sync with their scenarios
+        working-directory: examples/project-2
+        run: python ../../tools/ctx-run/ctx_run.py generate . --check
 
   extension:
     name: VS Code extension

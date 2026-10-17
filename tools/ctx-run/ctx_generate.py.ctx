@@ -1,0 +1,30 @@
+purpose: "ctx-run generate / verify: turns conceptualTests into pytest tests, one block per scenario tagged with a hash of the scenario, and keeps them in sync"
+
+tensions:
+  - "conceptualTests stay the source of truth — a changed scenario regenerates its block; a generated test is never edited to match the code, and the files say 'do not edit by hand'"
+  - "the block marker holds the scenario name (JSON string) and a 12-char sha256 of the scenario as canonical JSON — the same serialization as the cache key, so key order in the .ctx doesn't matter"
+  - "unchanged blocks are kept byte for byte with no LLM call — regenerating everything every run would cost money and churn diffs"
+  - "--check and verify never call the LLM — they are meant for CI and must be free and deterministic"
+  - "imported sibling modules go in the prompt — without them the model guesses constructors and the tests fail with TypeError instead of testing behavior (seen on examples/project-2)"
+  - "an invalid answer (no test function, syntax error, block markers) is retried once with the reason, then the scenario is reported FAILED and left out of the file"
+  - "only Python sources (pytest) for now — frameworks map by extension in spec/runner/runner-spec.json ('generate.frameworks')"
+  - "file names come from the source path relative to the current directory — run from the project root so the same .ctx always maps to the same test file"
+
+workflows:
+  generate: "collect .ctx → plan_file (source, scenarios, existing blocks) → per scenario: same hash → keep, else generate_block (prompt from spec, clean_code, one retry) → drop blocks of removed scenarios → render_file"
+  check: "plan_file → per scenario: missing / stale (hash differs) / ok → orphan blocks → exit 1 if any problem"
+  verify: "check_file for staleness → pytest --junitxml on the generated files → map test functions to scenarios via the block markers → worst outcome per scenario"
+
+conceptualTests:
+  - name: "Kept in sync"
+    steps:
+      - action: "run generate twice on an unchanged .ctx"
+        expect: "the second run makes no LLM call and keeps every block"
+      - action: "change one scenario's expect and run generate --check"
+        expect: "that scenario is reported STALE and the command exits 1"
+      - action: "run generate again"
+        expect: "only the changed scenario is regenerated; --check exits 0"
+  - name: "Verify reports per scenario"
+    steps:
+      - action: "verify a file whose source has a bug in one scenario"
+        expect: "that scenario is FAILED with the assertion message, the others PASSED, exit 1"
