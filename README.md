@@ -1,5 +1,5 @@
 # ContextDoc
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT) [![CI](https://github.com/Mauto82/contextdoc/actions/workflows/ci.yml/badge.svg)](https://github.com/Mauto82/contextdoc/actions/workflows/ci.yml)
 
 ContextDoc is a lightweight documentation standard for the AI-assisted development era. It provides structured context to AI coding agents — and human developers — through small YAML companion files that live alongside source code.
 
@@ -239,3 +239,20 @@ Contributions welcome — especially: real-world examples, feedback on the schem
 ## License
 
 MIT
+
+## Development
+
+CI (`.github/workflows/ci.yml`) runs on every push and pull request:
+
+- the `pytest` suites of `tools/ctx-run` and `tools/ctx-watch` (Python 3.11 and 3.13)
+- the VS Code extension: type-check, packaging, and a smoke test of the **packaged** `.vsix` in a real VS Code (`vscode-extension/test/smoke`): activation, commands, drift detection on startup and on save, CodeLens
+
+Run the same locally:
+
+```bash
+cd tools/ctx-run && python -m pytest -q
+cd tools/ctx-watch && python -m pytest -q
+cd vscode-extension && npm ci && npm run test:smoke
+```
+
+`CONTEXTDOC_TEST_MODEL=ollama/gemma4:e2b npm run test:smoke` also runs the conceptual tests through the model (not done in CI, to keep it free and deterministic).
