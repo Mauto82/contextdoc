@@ -1,0 +1,20 @@
+purpose: "MCP server exposing ContextDoc files (context, tensions, scenarios, drift) to any MCP-capable agent"
+
+tensions:
+  - "read-only — an agent must not be able to edit .ctx files through this server; conceptualTests changes need a human"
+  - "every path is resolved inside the project root and refused otherwise — an agent can't use it to read arbitrary files"
+  - "drift rules come from ctx-watch (GitHistory, .ctxignore, SKIP_DIRS), imported from the checkout — one implementation, not a copy"
+  - "supports mcp 1.x (FastMCP) and 2.x (MCPServer) — the SDK renamed the class in 2.0"
+
+workflows:
+  agent_flow: "agent starts → server instructions say: get_context before editing, never modify conceptualTests → get_context(file) → edit → check_drift"
+
+conceptualTests:
+  - name: "Context for a documented file"
+    steps:
+      - action: "get_context for a file with a .ctx and a project.ctx above it"
+        expect: "both files' contents, plus the reminder that conceptualTests are the specification"
+  - name: "Confinement"
+    steps:
+      - action: "get_context('../outside.txt')"
+        expect: "refused: outside the project root"

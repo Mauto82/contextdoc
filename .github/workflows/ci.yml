@@ -28,7 +28,7 @@ jobs:
           cache: pip
           cache-dependency-path: tools/*/requirements.txt
       - name: Install dependencies
-        run: pip install -r tools/ctx-run/requirements.txt -r tools/ctx-watch/requirements.txt pytest
+        run: pip install -r tools/ctx-run/requirements.txt -r tools/ctx-watch/requirements.txt -r tools/ctx-mcp/requirements.txt pytest
       - name: ctx-run tests
         working-directory: tools/ctx-run
         run: python -m pytest -q
@@ -38,6 +38,12 @@ jobs:
       - name: Generated tests of examples/project-2 in sync with their scenarios
         working-directory: examples/project-2
         run: python ../../tools/ctx-run/ctx_run.py generate . --check
+      - name: ctx-mcp tests
+        working-directory: tools/ctx-mcp
+        run: python -m pytest -q
+      - name: Claude Code hook tests
+        working-directory: integrations/claude-code
+        run: python -m pytest -q
 
   extension:
     name: VS Code extension

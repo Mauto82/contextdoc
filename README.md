@@ -139,6 +139,10 @@ workflows:
 
 See [`examples/project-0/CLAUDE.md`](./examples/project-0/CLAUDE.md) for a concrete example of the full setup.
 
+**Claude Code hook** — [`integrations/claude-code`](./integrations/claude-code/): a `PreToolUse` hook that adds `project.ctx` and the file's `.ctx` to Claude's context when it reads or edits a documented file, with no instruction needed, and asks *you* before an edit changes `conceptualTests`.
+
+**MCP server** — [`tools/ctx-mcp`](./tools/ctx-mcp/): `get_context`, `list_tensions`, `list_scenarios` and `check_drift` for any MCP-capable agent (Claude Code, Claude Desktop, Cursor…).
+
 **Git hook** to warn when source files are committed without updating their `.ctx` — see the [`hooks/`](./hooks/) directory:
 
 ```bash
