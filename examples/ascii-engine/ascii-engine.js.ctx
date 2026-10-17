@@ -1,0 +1,34 @@
+purpose: "Project points of a [-1,1]³ world through an orbiting camera onto a character grid, with a z-buffer and a ramp of characters for brightness"
+
+tensions:
+  - "Grid size comes from the <pre> and its font, measured in the DOM — not from configuration; the engine fills whatever box it is given and the caller only calls resize() when the box changes"
+  - "Cells are taller than wide — the aspect ratio scales horizontal distances, otherwise a sphere comes out as an egg; keep it in the projection, not in the scenes"
+  - "One character per cell, nearest point wins — the z-buffer is the only occlusion; there is no triangle rasterization and points behind the camera (z < 0.2) are dropped"
+  - "Brightness is a number in [0,1], clamped — lit() derives it from the normal and a fixed light, dot() from depth, plot() takes it as given; level 0 is reserved for the empty cell"
+  - "Lighting is two-sided — a normal facing away from the camera is flipped, because height fields and open surfaces are seen from both sides"
+  - "Hot path — plot / lit / put run thousands of times per frame: typed arrays reused across frames, no allocation per point beyond the rotated tuple, no argument validation"
+
+workflows:
+  projection: "rotate by yaw then pitch → push the camera back by distance → col = cols/2 + x·focal/z·aspect, row = rows/2 − y·focal/z → keep the point if nearer than the cell's depth"
+
+conceptualTests:
+  - name: "Empty frame"
+    steps:
+      - action: "begin() then end() with no points"
+        expect: "the <pre> holds rows lines of cols spaces"
+  - name: "Nearest point wins"
+    steps:
+      - action: "plot two points that land on the same cell, the far one bright and the near one dim"
+        expect: "the cell shows the dim character of the near point"
+  - name: "Point behind the camera"
+    steps:
+      - action: "plot a point whose view-space depth is below 0.2"
+        expect: "nothing is drawn and no cell changes"
+  - name: "Round stays round"
+    steps:
+      - action: "plot a circle of radius 1 in the plane facing the camera, with yaw and pitch at 0"
+        expect: "its width in columns is about aspect times its height in rows"
+  - name: "Lit surface"
+    steps:
+      - action: "draw a flat surface with surface(n, h) and h all zeros"
+        expect: "every visible point has the same brightness, whichever side the camera looks from"

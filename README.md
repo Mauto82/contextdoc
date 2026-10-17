@@ -263,7 +263,7 @@ See [`vscode-extension/README.md`](./vscode-extension/README.md) for details.
 - Schema: v0.3.0 — YAML, all sections optional, IDE autocomplete via JSON Schema; `project.ctx` for project-level context
 - Tools: `ctx-run` (LLM evaluation of `conceptualTests`, plus `generate` / `verify` for real pytest tests kept in sync), `ctx-watch` (drift from git history, intent-first `--reverse`), `ctx-lint`, `ctx-mcp`; the Claude Code hook; the VS Code extension 0.2.0
 - Shared specs: `spec/runner` and `spec/lint`, used by the Python tools and the extension and checked by parity tests
-- Examples: four reference projects (`project-0` CLI, `project-1` FastAPI async, `project-2` TDD demo with generated tests, `project-3` intent-first), each with a `project.ctx`
+- Examples: four reference projects (`project-0` CLI, `project-1` FastAPI async, `project-2` TDD demo with generated tests, `project-3` intent-first), each with a `project.ctx`, plus [`ascii-engine`](./examples/ascii-engine/), a dependency-free JavaScript 3D engine that draws with characters
 - Benchmarks: [`bench/`](./bench/) — agents with and without `.ctx`, and models for `ctx-run`
 - Real-world: [notebook-lm-downloader](https://github.com/Mauto82/notebook-lm-downloader)
 

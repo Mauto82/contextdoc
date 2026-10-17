@@ -1,0 +1,10 @@
+purpose: "A dependency-free ASCII 3D engine for the browser: scenes plot points, the engine projects them and writes characters into a <pre>"
+
+tensions:
+  - "Characters, not pixels — the output is plain text in a <pre>, so it inherits the page's font, colors and theme; do not switch to canvas or WebGL to make it prettier"
+  - "No dependencies and no build step — one ES module, imported as is; no math or 3D library for what a few lines of trigonometry cover"
+  - "The engine draws points, scenes decide what to draw — no meshes, no shapes, no scene graph inside the engine; a scene calls plot, lit, dot or surface between begin and end"
+
+workflows:
+  frame: "scene calls begin() → plots points with plot / lit / dot / surface → end() writes the frame into the <pre>"
+  resize: "container changes size → caller calls resize() → grid, aspect and focal length are recomputed from the font metrics"
