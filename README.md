@@ -74,6 +74,14 @@ The rename reflects this shift:
 
 The original 2025 ConceptDoc paper is still available as a snapshot of the starting point: [English](https://mautoblog.com/en/docs/conceptdoc-en/), [Italiano](https://mautoblog.com/docs/conceptdoc-it/).
 
+## Does it work?
+
+Measured on the repository's examples ([`bench/`](./bench/)): asked for changes that break a documented
+decision, Claude Haiku broke it in **9 of 12** runs without ContextDoc, **0 of 12** with `.ctx` files and a
+`CLAUDE.md` telling it to read them, and **2 of 12** with `.ctx` files and the Claude Code hook. With `.ctx`
+files alone and no instruction it didn't read them (9 of 12). One model, three runs per case: a direction,
+not a rate.
+
 ## Install the tools
 
 ```bash

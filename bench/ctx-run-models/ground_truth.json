@@ -1,0 +1,11 @@
+{
+  "$comment": "Expected verdict of every conceptual-test step in examples/project-0, -1 and -2 (68 steps). Every step passes except these real gaps, checked by hand against the code on 2026-10-17. 'project-2/store.py.ctx | Coupon validation enforced on apply | 1' is debatable (the action assumes used_count becomes 1, which checkout never does) and is counted as passing.",
+  "fail": [
+    "project-0/todo_app.py.ctx | Input validation | 4",
+    "project-2/store.py.ctx | Coupon validation enforced on apply | 2",
+    "project-2/store.py.ctx | Minimum order enforced on apply | 1",
+    "project-2/store.py.ctx | used_count incremented after checkout | 1",
+    "project-2/store.py.ctx | used_count incremented after checkout | 2"
+  ],
+  "total_steps": 68
+}
