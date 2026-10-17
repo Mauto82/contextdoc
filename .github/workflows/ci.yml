@@ -50,6 +50,33 @@ jobs:
       - name: Lint this repository's .ctx files
         run: python tools/ctx-lint/ctx_lint.py examples tools integrations project.ctx --strict
 
+  package:
+    name: Python package (build, install, run)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Build wheel and sdist
+        run: pipx run build
+      - name: Install the wheel in a clean venv
+        run: |
+          python -m venv /tmp/clean
+          /tmp/clean/bin/pip install "$(ls dist/*.whl)[mcp]"
+      - name: Run the installed commands outside the checkout
+        run: |
+          cp -R examples/project-2 /tmp/p2 && cd /tmp/p2
+          /tmp/clean/bin/ctx-run --help > /dev/null
+          /tmp/clean/bin/ctx-run generate . --check
+          /tmp/clean/bin/ctx-lint . --strict
+          /tmp/clean/bin/ctx-watch status --help > /dev/null
+          /tmp/clean/bin/python -c "import ctx_mcp, ctx_watch; print('ctx-mcp ok')"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: contextdoc-dist
+          path: dist/
+
   extension:
     name: VS Code extension
     runs-on: ubuntu-latest

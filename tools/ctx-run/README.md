@@ -30,6 +30,8 @@ This is **static analysis via LLM**, not code execution. Treat failures as signa
 ## Installation
 
 ```bash
+pipx install contextdoc          # installs the ctx-run command (with ctx-watch, ctx-lint, ctx-mcp)
+# or, from a checkout:
 pip install -r tools/ctx-run/requirements.txt
 ```
 

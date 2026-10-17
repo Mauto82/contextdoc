@@ -1,0 +1,62 @@
+[build-system]
+requires = ["hatchling>=1.21"]
+build-backend = "hatchling.build"
+
+[project]
+name = "contextdoc"
+version = "0.4.0"
+description = "ContextDoc tools: run and generate conceptual tests (ctx-run), detect .ctx drift (ctx-watch), lint .ctx files (ctx-lint), expose them to agents over MCP (ctx-mcp)"
+readme = "README.md"
+requires-python = ">=3.11"
+license = "MIT"
+license-files = ["LICENSE"]
+authors = [{ name = "Mauto82" }]
+keywords = ["contextdoc", "documentation", "ai", "llm", "coding-agents", "testing", "mcp"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Software Development :: Documentation",
+    "Topic :: Software Development :: Testing",
+]
+dependencies = [
+    "click>=8.1.0",
+    "pyyaml>=6.0.0",
+    "watchdog>=3.0.0",
+    "litellm>=1.35.0",
+]
+
+[project.optional-dependencies]
+mcp = ["mcp>=1.2"]
+
+[project.scripts]
+ctx-run = "ctx_run:cli"
+ctx-watch = "ctx_watch:cli"
+ctx-lint = "ctx_lint:cli"
+ctx-mcp = "ctx_mcp:main"
+
+[project.urls]
+Homepage = "https://github.com/Mauto82/contextdoc"
+Repository = "https://github.com/Mauto82/contextdoc"
+Issues = "https://github.com/Mauto82/contextdoc/issues"
+Paper = "https://mautoblog.com/en/docs/contextdoc-en/"
+
+# The tools stay in tools/<name>/ (one module each, with its .ctx and tests); the wheel maps them to
+# top-level modules, and the specs they share (spec/) to contextdoc_spec/, where they look for them.
+[tool.hatch.build.targets.wheel]
+bypass-selection = true
+
+[tool.hatch.build.targets.wheel.force-include]
+"tools/ctx-run/ctx_run.py" = "ctx_run.py"
+"tools/ctx-run/ctx_generate.py" = "ctx_generate.py"
+"tools/ctx-watch/ctx_watch.py" = "ctx_watch.py"
+"tools/ctx-lint/ctx_lint.py" = "ctx_lint.py"
+"tools/ctx-mcp/ctx_mcp.py" = "ctx_mcp.py"
+"spec/runner/runner-spec.json" = "contextdoc_spec/runner-spec.json"
+"spec/lint/lint-spec.json" = "contextdoc_spec/lint-spec.json"
+
+[tool.hatch.build.targets.sdist]
+include = ["tools/*/*.py", "spec/runner/runner-spec.json", "spec/lint/lint-spec.json", "README.md", "LICENSE", "pyproject.toml"]

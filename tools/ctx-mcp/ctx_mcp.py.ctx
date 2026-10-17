@@ -3,7 +3,7 @@ purpose: "MCP server exposing ContextDoc files (context, tensions, scenarios, dr
 tensions:
   - "read-only — an agent must not be able to edit .ctx files through this server; conceptualTests changes need a human"
   - "every path is resolved inside the project root and refused otherwise — an agent can't use it to read arbitrary files"
-  - "drift rules come from ctx-watch (GitHistory, .ctxignore, SKIP_DIRS), imported from the checkout — one implementation, not a copy"
+  - "drift rules come from ctx-watch (GitHistory, .ctxignore, SKIP_DIRS), imported from the installed package or, in a checkout, from ../ctx-watch — one implementation, not a copy"
   - "supports mcp 1.x (FastMCP) and 2.x (MCPServer) — the SDK renamed the class in 2.0"
 
 workflows:

@@ -31,6 +31,12 @@ ContextDoc is a documentation standard. The main deliverables are:
 - Include a `CLAUDE.md` in the example project — it demonstrates how ContextDoc and operational instructions work together
 - Include a `README.md` explaining the example
 
+## Packaging
+
+- One Python package, `contextdoc` (root `pyproject.toml`, hatchling). The tools stay in `tools/<name>/`; the wheel maps each module to the top level and the shared specs to `contextdoc_spec/`
+- A new tool module or spec file must be added to `[tool.hatch.build.targets.wheel.force-include]`, or the installed commands won't find it (CI builds the wheel and runs the commands from a clean venv)
+- Releases: bump `version` in `pyproject.toml`, push a `vX.Y.Z` tag; `.github/workflows/release.yml` publishes to PyPI (trusted publishing)
+
 ## Before committing
 
 - Python tools: `python -m pytest -q` in `tools/ctx-run`, `tools/ctx-watch`, `tools/ctx-mcp`, `tools/ctx-lint` and `integrations/claude-code`; `.ctx` files must pass `ctx_lint.py --strict`

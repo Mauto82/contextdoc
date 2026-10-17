@@ -7,7 +7,7 @@ tensions:
   - "overall_passed is recomputed from steps, not trusted from LLM — guards against LLM inconsistency where overall=true but a step has passed=false"
   - "No Rich dependency — three color constants and ANSI codes are sufficient for pass/fail output; Rich adds ~2MB for marginal benefit in this context"
   - "max_tokens is 4096, not lower — reasoning models count their thinking against the limit; at 1500 they often returned an empty answer that could not be parsed"
-  - "prompts, language map, LLM settings, result texts and cache rules come from spec/runner/runner-spec.json, shared with the VS Code extension — change them there and regenerate spec/runner/fixtures/expected.json; ctx-run is the reference implementation the fixtures are generated from"
+  - "prompts, language map, LLM settings, result texts and cache rules come from spec/runner/runner-spec.json (contextdoc_spec/ in the installed package), shared with the VS Code extension — change them there and regenerate spec/runner/fixtures/expected.json; ctx-run is the reference implementation the fixtures are generated from"
   - "LiteLLM as the only provider abstraction — do not add per-provider clients; the model string convention (ollama/x, gpt-x, claude-x) handles routing"
 
 workflows:

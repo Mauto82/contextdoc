@@ -16,13 +16,16 @@ The server also sends agents a short instruction: call `get_context` before edit
 ## Install
 
 ```bash
+pipx install "contextdoc[mcp]"     # the ctx-mcp command
+# or, from a checkout:
 pip install -r tools/ctx-mcp/requirements.txt
 ```
 
 Claude Code, from the project root:
 
 ```bash
-claude mcp add --transport stdio contextdoc -- python /path/to/contextdoc/tools/ctx-mcp/ctx_mcp.py
+claude mcp add --transport stdio contextdoc -- ctx-mcp
+# or from a checkout: -- python /path/to/contextdoc/tools/ctx-mcp/ctx_mcp.py
 ```
 
 or a project `.mcp.json`:

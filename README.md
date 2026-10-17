@@ -74,6 +74,16 @@ The rename reflects this shift:
 
 The original 2025 ConceptDoc paper is still available as a snapshot of the starting point: [English](https://mautoblog.com/en/docs/conceptdoc-en/), [Italiano](https://mautoblog.com/docs/conceptdoc-it/).
 
+## Install the tools
+
+```bash
+pipx install contextdoc                 # ctx-run, ctx-watch, ctx-lint, ctx-mcp
+pipx install "contextdoc[mcp]"          # with the MCP server's SDK
+pipx install "git+https://github.com/Mauto82/contextdoc"   # latest from main
+```
+
+The examples below run the tools from a checkout (`python tools/<tool>/<tool>.py …`); once installed, the same commands are `ctx-run …`, `ctx-watch …`, `ctx-lint …`, `ctx-mcp`.
+
 ## Getting Started
 
 1. Check out the [schema specification](./schema/README.md)
