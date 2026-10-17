@@ -1,0 +1,73 @@
+{
+  "$comment": "Rules of ctx-lint, shared by tools/ctx-lint (Python, the reference) and the VS Code extension. Warnings only: ContextDoc is non-binding. Change here, regenerate fixtures/expected.json with ctx-lint, run both suites. Patterns cover English and Italian.",
+  "version": 1,
+  "sections": [
+    "purpose",
+    "tensions",
+    "workflows",
+    "conceptualTests",
+    "todos",
+    "ref"
+  ],
+  "legacySections": [
+    "metadata",
+    "dependencies",
+    "components",
+    "invariants",
+    "stateModel",
+    "testFixtures",
+    "businessLogic",
+    "aiNotes"
+  ],
+  "maxLines": 60,
+  "purposeMaxChars": 200,
+  "vagueExpects": [
+    "works",
+    "it works",
+    "works correctly",
+    "works as expected",
+    "as expected",
+    "ok",
+    "correct",
+    "correctly",
+    "fine",
+    "properly",
+    "success",
+    "no errors",
+    "funziona",
+    "funziona correttamente",
+    "come previsto",
+    "corretto",
+    "correttamente",
+    "ok, nessun errore"
+  ],
+  "signaturePatterns": {
+    ".py": "^\\s*(?:async\\s+)?(?:def|class)\\s+\\w+\\s*\\([^)]*\\)",
+    ".js": "^\\s*(?:export\\s+)?(?:async\\s+)?function\\s+\\w+\\s*\\([^)]*\\)",
+    ".ts": "^\\s*(?:export\\s+)?(?:async\\s+)?function\\s+\\w+\\s*\\([^)]*\\)",
+    ".go": "^func\\s+(?:\\([^)]*\\)\\s*)?\\w+\\s*\\([^)]*\\)",
+    ".php": "^\\s*(?:public|private|protected|static|\\s)*function\\s+\\w+\\s*\\([^)]*\\)",
+    ".rb": "^\\s*def\\s+\\w+(?:\\([^)]*\\))?",
+    ".java": "^\\s*(?:public|private|protected)[^=;(]*\\w+\\s*\\([^)]*\\)\\s*\\{?"
+  },
+  "minSignatureChars": 16,
+  "validation": {
+    "action": "\\b(missing|without|no|invalid|null|none|undefined|empty|negative|wrong type|mancant[ei]|senza|invalid[oaie]|non valid[oaie]|null[oaie]?|vuot[oaie]|negativ[oaie])\\b",
+    "expect": "\\b(error|exception|raises?|throws?|rejected|fail(s|ure)?|errore|eccezione|solleva|lancia|rifiutat[oaie]|fallisce)\\b",
+    "minSteps": 2,
+    "minShare": 0.3
+  },
+  "messages": {
+    "L001": "${lines} lines, over ~${max}: a .ctx this long is probably repeating the code — keep only what would surprise a reader",
+    "L002": "looks copied from the code (${signature}): signatures are readable in the source, describe intent instead",
+    "L003": "'${key}' is not a ContextDoc section (${allowed}); ${hint}",
+    "L003legacy": "it comes from ConceptDoc — drop it, or turn what matters into tensions",
+    "L003unknown": "readers and tools will ignore it",
+    "L004": "also in ${other}: cross-cutting context belongs in project.ctx only",
+    "L005": "${count} of ${total} steps expect an error for a missing or invalid input: validating every argument of internal objects makes code defensive and verbose — keep such checks at the public boundary",
+    "L006missing": "step without an observable expect",
+    "L006vague": "expect '${expect}' is not observable: say what the reader can check (a value, a state, an error)",
+    "L007": "not valid YAML: ${error}",
+    "L008": "purpose is ${chars} characters: one line saying what the file does, not how"
+  }
+}

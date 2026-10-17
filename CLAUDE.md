@@ -33,7 +33,7 @@ ContextDoc is a documentation standard. The main deliverables are:
 
 ## Before committing
 
-- Python tools: `python -m pytest -q` in `tools/ctx-run`, `tools/ctx-watch`, `tools/ctx-mcp` and `integrations/claude-code`
+- Python tools: `python -m pytest -q` in `tools/ctx-run`, `tools/ctx-watch`, `tools/ctx-mcp`, `tools/ctx-lint` and `integrations/claude-code`; `.ctx` files must pass `ctx_lint.py --strict`
 - VS Code extension: `npm run test:smoke` in `vscode-extension` — it tests the packaged `.vsix`, not the sources (0.1.0 shipped without its `yaml` dependency and never activated)
 - CI runs both on every push and pull request
 

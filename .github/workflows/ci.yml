@@ -28,7 +28,7 @@ jobs:
           cache: pip
           cache-dependency-path: tools/*/requirements.txt
       - name: Install dependencies
-        run: pip install -r tools/ctx-run/requirements.txt -r tools/ctx-watch/requirements.txt -r tools/ctx-mcp/requirements.txt pytest
+        run: pip install -r tools/ctx-run/requirements.txt -r tools/ctx-watch/requirements.txt -r tools/ctx-mcp/requirements.txt -r tools/ctx-lint/requirements.txt pytest
       - name: ctx-run tests
         working-directory: tools/ctx-run
         run: python -m pytest -q
@@ -44,6 +44,11 @@ jobs:
       - name: Claude Code hook tests
         working-directory: integrations/claude-code
         run: python -m pytest -q
+      - name: ctx-lint tests
+        working-directory: tools/ctx-lint
+        run: python -m pytest -q
+      - name: Lint this repository's .ctx files
+        run: python tools/ctx-lint/ctx_lint.py examples tools integrations project.ctx --strict
 
   extension:
     name: VS Code extension

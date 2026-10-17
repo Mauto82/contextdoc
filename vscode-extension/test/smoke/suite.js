@@ -45,6 +45,11 @@ exports.run = async () => {
   const lenses = await vscode.commands.executeCommand('vscode.executeCodeLensProvider', doc.uri);
   check((lenses || []).some((l) => l.command && l.command.command === 'contextdoc.runTestsOnFile'), 'Run Tests CodeLens on conceptualTests');
 
+  const legacy = vscode.Uri.file(path.join(root, 'legacy.py.ctx'));
+  await until(() => vscode.languages.getDiagnostics(legacy).some((d) => d.source === 'ContextDoc lint'));
+  const lint = vscode.languages.getDiagnostics(legacy).filter((d) => d.source === 'ContextDoc lint');
+  check(lint.length === 1 && lint[0].code === 'L003' && lint[0].range.start.line === 1, 'lint warns about the ConceptDoc-era section (L003, line 2)');
+
   if (process.env.CONTEXTDOC_TEST_MODEL) {
     await vscode.commands.executeCommand('contextdoc.runTestsOnFile');
     const cache = path.join(process.env.XDG_CACHE_HOME, 'ctx-run', 'cache.json'); // shared with ctx-run

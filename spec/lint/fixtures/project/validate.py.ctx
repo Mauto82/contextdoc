@@ -1,0 +1,10 @@
+purpose: "Renderer"
+conceptualTests:
+  - name: "Costruttore"
+    steps:
+      - action: "istanziare il renderer senza parametri"
+        expect: "errore esplicito al costruttore"
+      - action: "istanziare con viewport non valido"
+        expect: "errore esplicito"
+      - action: "disegnare un punto"
+        expect: "la cella contiene il carattere della profondità"

@@ -56,6 +56,10 @@ Built in, same rules as `ctx-watch status` (no Python, no CLI). Inside a git rep
 
 Unlike `ctx-watch`, files without a `.ctx` are not reported: ContextDoc expects a `.ctx` only where it adds value.
 
+### Lint
+
+`.ctx` files get the same warnings as [`ctx-lint`](../tools/ctx-lint/) in the Problems panel (on open, on save and when the workspace opens): too long, copied from the code, sections outside the schema, repeated from `project.ctx`, over-specified input validation, steps without an observable `expect`.
+
 ### Native LLM Runner
 
 The extension includes a built-in LLM runner — it calls provider APIs directly via HTTP. No need to install Python or `ctx-run`.

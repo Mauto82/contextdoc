@@ -1,0 +1,21 @@
+purpose: "Warns about .ctx files that drift from ContextDoc's principles: too long, copied from the code, outside the schema, duplicated, over-specified"
+
+tensions:
+  - "warnings only, exit 0 unless --strict — ContextDoc is non-binding; --strict exists for CI on a codebase that chose to enforce it"
+  - "rules, thresholds and messages live in spec/lint/lint-spec.json, shared with the VS Code extension — ctx-lint is the reference; spec/lint/fixtures/expected.json is generated from it"
+  - "L005 is proportional (at least 2 steps and 30% of the file's steps), not a fixed count — two 'explicit error' steps out of five were enough to make the 3D engine's code defensive and verbose"
+  - "patterns cover English and Italian — real .ctx files are written in the team's language"
+  - "L007 reports the YAML parser's message — the extension's parser words it differently, so parity checks compare only the code there"
+
+workflows:
+  lint: "collect .ctx under PATHS → per file: YAML (L007) → length (L001) → sections (L003) → purpose (L008) → signatures from the source (L002) → project.ctx duplicates (L004) → scenarios (L006, L005) → sorted by line"
+
+conceptualTests:
+  - name: "Clean file"
+    steps:
+      - action: "lint a .ctx with a one-line purpose, one tension and an observable scenario"
+        expect: "no warnings, exit 0 even with --strict"
+  - name: "Legacy ConceptDoc section"
+    steps:
+      - action: "lint a .ctx with a 'dependencies' section"
+        expect: "L003 on its line, with the hint that it comes from ConceptDoc"

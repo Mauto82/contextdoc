@@ -1,0 +1,8 @@
+purpose: "Clean example"
+tensions:
+  - "IDs are never reused after deletion — billing audit trail depends on this"
+conceptualTests:
+  - name: "Delete"
+    steps:
+      - action: "delete item 7"
+        expect: "item 7 no longer listed; a new item gets ID 8"

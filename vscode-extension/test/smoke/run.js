@@ -34,6 +34,8 @@ function main() {
   fs.rmSync(path.join(ws, '__pycache__'), { recursive: true, force: true });
   const old = new Date('2026-01-01T00:00:00Z');
   for (const f of fs.readdirSync(ws).filter((f) => f.endsWith('.ctx'))) { fs.utimesSync(path.join(ws, f), old, old); }
+  // a .ctx with a ConceptDoc-era section, for the lint check (no source: drift ignores it)
+  fs.writeFileSync(path.join(ws, 'legacy.py.ctx'), 'purpose: "legacy"\nmetadata:\n  version: 1\n');
   const settings = { 'contextdoc.confirmRuns': false };
   if (process.env.CONTEXTDOC_TEST_MODEL) { settings['contextdoc.model'] = process.env.CONTEXTDOC_TEST_MODEL; }
   fs.mkdirSync(path.join(ws, '.vscode'));

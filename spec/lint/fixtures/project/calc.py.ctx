@@ -1,0 +1,12 @@
+purpose: "Arithmetic used by the billing ledger, including the rounding rules shared with the accounting export, the currency conversion helpers and the legacy integer-cents mode kept for the 2019 invoices that the tax office may still ask to reprint"
+dependencies:
+  - "math"
+tensions:
+  - "No global state: every service is injected"
+  - "def divide(numerator: float, denominator: float) is the only entry point"
+conceptualTests:
+  - name: "Division"
+    steps:
+      - action: "divide(6, 3)"
+        expect: "works"
+      - action: "divide(1, 0)"

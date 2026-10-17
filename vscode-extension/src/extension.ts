@@ -1,4 +1,5 @@
 import * as vscode from 'vscode';
+import * as path from 'path';
 import { runCtxTests, RunResult } from './runner';
 import * as os from 'os';
 import { runCtxTestsNative, planRun } from './ctxRunner';
@@ -7,6 +8,7 @@ import { ResultCache } from './cache';
 import { TestResultsProvider } from './testResultsView';
 import { DriftEntry, driftOf, gitToplevel, loadIgnorePatterns, scanDrift, sourceFor } from './watcher';
 import { updateDiagnostics } from './diagnostics';
+import { lintText } from './lint';
 import { StatusBarManager, ModelStatusBar } from './statusBar';
 import { isConfigured, runSetupWizard } from './setupWizard';
 
@@ -36,6 +38,28 @@ export function activate(context: vscode.ExtensionContext): void {
   };
 
   vscode.window.registerTreeDataProvider('contextdoc.testResults', testResultsProvider);
+
+  // ctx-lint: warnings on .ctx files (same rules as tools/ctx-lint), on open, on save and at startup
+  const lintCollection = vscode.languages.createDiagnosticCollection('contextdoc-lint');
+  context.subscriptions.push(lintCollection);
+  const lintDocument = (doc: vscode.TextDocument): void => {
+    if (doc.uri.scheme !== 'file' || !doc.fileName.endsWith('.ctx')) { return; }
+    const root = vscode.workspace.getWorkspaceFolder(doc.uri)?.uri.fsPath ?? path.dirname(doc.fileName);
+    const diags = lintText(doc.fileName, doc.getText(), root).map((f) => {
+      const line = Math.min(Math.max(f.line - 1, 0), Math.max(doc.lineCount - 1, 0));
+      const d = new vscode.Diagnostic(doc.lineAt(line).range, f.message, vscode.DiagnosticSeverity.Warning);
+      d.source = 'ContextDoc lint';
+      d.code = f.code;
+      return d;
+    });
+    lintCollection.set(doc.uri, diags);
+  };
+  context.subscriptions.push(vscode.workspace.onDidOpenTextDocument(lintDocument));
+  context.subscriptions.push(vscode.workspace.onDidSaveTextDocument(lintDocument));
+  vscode.workspace.textDocuments.forEach(lintDocument);
+  vscode.workspace.findFiles('**/*.ctx', '**/node_modules/**').then(async (uris) => {
+    for (const uri of uris) { lintDocument(await vscode.workspace.openTextDocument(uri)); }
+  });
 
   // --- First-run setup prompt ---
 

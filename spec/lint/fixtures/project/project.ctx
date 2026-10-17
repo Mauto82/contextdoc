@@ -1,0 +1,3 @@
+purpose: "Fixture project for ctx-lint"
+tensions:
+  - "No global state: every service is injected"
