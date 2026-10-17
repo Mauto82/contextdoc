@@ -1,0 +1,57 @@
+{
+  "broken.py.ctx": [
+    [
+      5,
+      "L007",
+      "not valid YAML: found unexpected end of stream"
+    ]
+  ],
+  "calc.py.ctx": [
+    [
+      1,
+      "L008",
+      "purpose is 240 characters: one line saying what the file does, not how"
+    ],
+    [
+      2,
+      "L003",
+      "'dependencies' is not a ContextDoc section (purpose, tensions, workflows, conceptualTests, todos, ref); it comes from ConceptDoc — drop it, or turn what matters into tensions"
+    ],
+    [
+      5,
+      "L004",
+      "also in project.ctx: cross-cutting context belongs in project.ctx only"
+    ],
+    [
+      6,
+      "L002",
+      "looks copied from the code (def divide(numerator: float, denominator: float)): signatures are readable in the source, describe intent instead"
+    ],
+    [
+      11,
+      "L006",
+      "expect 'works' is not observable: say what the reader can check (a value, a state, an error)"
+    ],
+    [
+      12,
+      "L006",
+      "step without an observable expect"
+    ]
+  ],
+  "clean.py.ctx": [],
+  "long.py.ctx": [
+    [
+      1,
+      "L001",
+      "64 lines, over ~60: a .ctx this long is probably repeating the code — keep only what would surprise a reader"
+    ]
+  ],
+  "project.ctx": [],
+  "validate.py.ctx": [
+    [
+      2,
+      "L005",
+      "2 of 3 steps expect an error for a missing or invalid input: validating every argument of internal objects makes code defensive and verbose — keep such checks at the public boundary"
+    ]
+  ]
+}

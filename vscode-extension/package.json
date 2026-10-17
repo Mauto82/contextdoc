@@ -103,7 +103,7 @@
   },
   "scripts": {
     "vscode:prepublish": "npm run compile",
-    "compile": "tsc -p ./ && node -e \"require('fs').copyFileSync('../spec/runner/runner-spec.json', 'out/runner-spec.json')\"",
+    "compile": "tsc -p ./ && node -e \"const fs=require('fs'); fs.copyFileSync('../spec/runner/runner-spec.json', 'out/runner-spec.json'); fs.copyFileSync('../spec/lint/lint-spec.json', 'out/lint-spec.json')\"",
     "watch": "tsc -watch -p ./",
     "package": "vsce package",
     "test:smoke": "node test/smoke/run.js",
