@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ASCII Engine</title>
+    <style>
+      html, body { margin: 0; height: 100%; background: #000; }
+      #screen { margin: 0; height: 100%; box-sizing: border-box; padding: 8px; color: #44d9e6; font: 12px/1.1 monospace; overflow: hidden; }
+    </style>
+  </head>
+  <body>
+    <pre id="screen"></pre>
+    <script type="module">
+      // demo scene: a lit torus and a depth-shaded ring, the camera orbiting
+      import { AsciiEngine } from './ascii-engine.js';
+
+      const engine = new AsciiEngine(document.getElementById('screen'));
+      addEventListener('resize', () => engine.resize());
+
+      const R = 0.7, r = 0.28;
+      const frame = (t) => {
+        engine.yaw = t / 2400;
+        engine.begin();
+        for (let i = 0; i < 90; i++) {
+          const u = (i / 90) * 2 * Math.PI;
+          for (let j = 0; j < 40; j++) {
+            const v = (j / 40) * 2 * Math.PI;
+            const nx = Math.cos(u) * Math.cos(v), ny = Math.sin(v), nz = Math.sin(u) * Math.cos(v);
+            engine.lit(R * Math.cos(u) + r * nx, r * ny, R * Math.sin(u) + r * nz, nx, ny, nz);
+          }
+        }
+        for (let i = 0; i < 240; i++) {
+          const a = (i / 240) * 2 * Math.PI;
+          engine.dot(1.25 * Math.cos(a), 0.15 * Math.sin(3 * a + t / 500), 1.25 * Math.sin(a));
+        }
+        engine.end();
+        requestAnimationFrame(frame);
+      };
+      requestAnimationFrame(frame);
+    </script>
+  </body>
+</html>
