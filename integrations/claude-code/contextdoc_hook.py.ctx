@@ -1,0 +1,23 @@
+purpose: "Claude Code PreToolUse hook: gives Claude the .ctx context of the files it reads or edits, and asks the user before conceptualTests change"
+
+tensions:
+  - "standard library only, no YAML parser — it must run with any python3, without installing anything; conceptualTests are found line by line (key at column 0 to the next top-level key)"
+  - "never blocks on errors: any exception → exit 0 without output; a broken hook must not stop the agent"
+  - "context is given once per session and .ctx version (state in the temp folder), then a one-line reminder — repeating the full .ctx on every Read/Edit would flood the context window"
+  - "conceptualTests changes get 'ask', not 'deny' — the user may legitimately change a requirement; the agent alone may not"
+  - "a new .ctx (file not on disk yet) is not guarded — writing a spec for the first time is the intent-first workflow"
+  - "project.ctx is given only together with a file's own .ctx — files without a .ctx stay silent"
+
+conceptualTests:
+  - name: "Context on read"
+    steps:
+      - action: "Read of calc.py, which has calc.py.ctx and a project.ctx"
+        expect: "additionalContext contains both files; no permissionDecision"
+      - action: "Edit of calc.py later in the same session"
+        expect: "only a one-line reminder"
+  - name: "Specification guard"
+    steps:
+      - action: "Edit of calc.py.ctx changing an expect in conceptualTests"
+        expect: "permissionDecision ask, with a reason that names conceptualTests"
+      - action: "Edit of calc.py.ctx changing only a tension"
+        expect: "no output: the edit goes through"
