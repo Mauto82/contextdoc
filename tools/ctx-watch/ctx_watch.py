@@ -3,6 +3,7 @@
 
 import fnmatch
 import os
+import subprocess
 import sys
 import time
 from datetime import datetime
@@ -74,6 +75,77 @@ def _is_ignored(path: Path, root: Path, patterns: list[str]) -> bool:
         if "/" not in pattern and fnmatch.fnmatch(name, pattern):
             return True
     return False
+
+
+# ── git-based drift ───────────────────────────────────────────────────────────
+
+class GitHistory:
+    """Drift from git history instead of mtimes, which a clone, checkout or rebase makes meaningless.
+
+    A source drifts when commits after the last commit that touched its .ctx changed it, or when
+    it has uncommitted changes and its .ctx doesn't. Built from one `git log` and one `git status`.
+    """
+
+    def __init__(self, toplevel: Path, commits_by_file: dict[str, list[int]], dirty: set[str]) -> None:
+        self.toplevel = toplevel
+        self.commits_by_file = commits_by_file  # repo-relative path -> commit indices, 0 = newest
+        self.dirty = dirty                      # repo-relative paths: staged, unstaged or untracked
+
+    @classmethod
+    def load(cls, path: Path) -> "GitHistory | None":
+        """The history of the repository containing PATH, or None outside git."""
+        def git(*args: str) -> str | None:
+            try:
+                out = subprocess.run(["git", *args], cwd=path, capture_output=True, text=True, check=True)
+            except (OSError, subprocess.CalledProcessError):
+                return None
+            return out.stdout
+
+        top = git("rev-parse", "--show-toplevel")
+        if top is None:
+            return None
+        commits_by_file: dict[str, list[int]] = {}
+        log = git("log", "--topo-order", "--no-renames", "--name-only", "--format=%x00%H") or ""
+        for index, block in enumerate(b for b in log.split("\x00") if b.strip()):
+            for name in block.splitlines()[1:]:
+                if name:
+                    commits_by_file.setdefault(name, []).append(index)
+        dirty: set[str] = set()
+        status_out = git("status", "--porcelain=v1", "-z", "--no-renames", "--untracked-files=all") or ""
+        for entry in status_out.split("\x00"):
+            if len(entry) > 3:
+                dirty.add(entry[3:])
+        return cls(Path(top.strip()).resolve(), commits_by_file, dirty)
+
+    def _rel(self, path: Path) -> str:
+        return path.resolve().relative_to(self.toplevel).as_posix()
+
+    def is_dirty(self, path: Path) -> bool:
+        return self._rel(path) in self.dirty
+
+    def drift(self, source: Path, ctx: Path) -> str | None:
+        """Why SOURCE drifted from its existing CTX, or None if it didn't."""
+        if self.is_dirty(ctx):
+            return None  # the .ctx is being updated alongside
+        if self.is_dirty(source):
+            return "source has uncommitted changes, .ctx doesn't"
+        ctx_commits = self.commits_by_file.get(self._rel(ctx))
+        if not ctx_commits:
+            return None
+        newer = [i for i in self.commits_by_file.get(self._rel(source), []) if i < ctx_commits[0]]
+        if newer:
+            return f".ctx not updated in {len(newer)} commit(s) that changed the source"
+        return None
+
+    def changed_since(self, base: str) -> list[Path] | None:
+        """Files changed between BASE and HEAD (merge-base diff), plus uncommitted ones."""
+        try:
+            out = subprocess.run(["git", "diff", "--name-only", "--no-renames", f"{base}...HEAD"],
+                                 cwd=self.toplevel, capture_output=True, text=True, check=True).stdout
+        except (OSError, subprocess.CalledProcessError):
+            return None
+        names = {n for n in out.splitlines() if n} | self.dirty
+        return [self.toplevel / n for n in sorted(names)]
 
 
 # ── change tracker ────────────────────────────────────────────────────────────
@@ -270,6 +342,10 @@ def watch(path: str, grace: int, ext: str | None, ignore_dir: tuple[str, ...], n
               help="Additional directory name to skip (repeatable).")
 @click.option("--reverse", is_flag=True,
               help="Intent-first mode: find .ctx specs without a corresponding source file.")
+@click.option("--base", default=None, metavar="REF",
+              help="Git only: check the files changed since REF (merge base) plus uncommitted ones, e.g. --base origin/main in CI.")
+@click.option("--mtime", "use_mtime", is_flag=True,
+              help="Use file modification times even inside a git repository (the pre-git behavior).")
 @click.option("--no-color", is_flag=True, help="Disable ANSI color output.")
 def status(
     path: str,
@@ -278,15 +354,26 @@ def status(
     ext: str | None,
     ignore_dir: tuple[str, ...],
     reverse: bool,
+    base: str | None,
+    use_mtime: bool,
     no_color: bool,
 ) -> None:
-    """One-shot scan of PATH for source files modified without a .ctx update."""
+    """One-shot scan of PATH for source files modified without a .ctx update.
+
+    Inside a git repository drift comes from the history: a source drifts when commits after the
+    last .ctx commit changed it, or when it has uncommitted changes and its .ctx doesn't. Outside
+    git (or with --mtime) it comes from file modification times, limited to --since.
+    """
     extensions = set(ext.split(",")) if ext else DEFAULT_EXTENSIONS
     skip_dirs = SKIP_DIRS | set(ignore_dir)
     c = _C(no_color)
     root = Path(path).resolve()
     ignore_patterns = _load_ignore_patterns(root)
     drift: list[tuple[Path, str]] = []
+    history = None if (use_mtime or reverse) else GitHistory.load(root)
+    if base is not None and history is None:
+        click.echo(f"{c.r}--base needs a git repository (and no --mtime).{c.rst}")
+        sys.exit(2)
 
     if reverse:
         # Intent-first mode: find .ctx specs with missing or lagging source
@@ -321,33 +408,58 @@ def status(
             click.echo(f"  {c.c}→{c.rst}  {rel}  ({reason})")
         sys.exit(1)
 
-    if changed_files is not None:
-        # CI mode: check an explicit file list, no mtime filter
-        raw = sys.stdin.read() if changed_files == "-" else changed_files
-        file_list = raw.split()
+    def check(fpath: Path, report_missing: bool) -> None:
+        """Drift of one watched source file, by git history when available, else by mtime."""
+        ctx = _ctx_of(fpath)
+        if not ctx.exists():
+            if report_missing:
+                drift.append((fpath, "no .ctx file"))
+            return
+        if history is not None:
+            reason = history.drift(fpath, ctx)
+            if reason:
+                drift.append((fpath, reason))
+            return
+        try:
+            src_mtime = fpath.stat().st_mtime
+        except OSError:
+            return
+        if ctx.stat().st_mtime < src_mtime:
+            lag = src_mtime - ctx.stat().st_mtime
+            drift.append((fpath, f".ctx is {_fmt_elapsed(lag)} older than source"))
+
+    def watched(fpath: Path) -> bool:
+        return (fpath.exists() and fpath.suffix.lstrip(".") in extensions
+                and not _should_skip(fpath.relative_to(root) if fpath.is_relative_to(root) else fpath, skip_dirs)
+                and not _is_ignored(fpath, root, ignore_patterns))
+
+    if changed_files is not None or base is not None:
+        # explicit list (CI): every listed source is checked, a missing .ctx included
+        if base is not None:
+            file_list = [p for p in (history.changed_since(base) or []) if p.is_relative_to(root)]
+        else:
+            raw = sys.stdin.read() if changed_files == "-" else changed_files
+            file_list = [Path(f) if Path(f).is_absolute() else root / f for f in raw.split()]
         checked = 0
-        for fpath_str in file_list:
-            fpath = Path(fpath_str)
-            if not fpath.is_absolute():
-                fpath = root / fpath
-            if not fpath.exists() or fpath.suffix.lstrip(".") not in extensions:
-                continue
-            if _is_ignored(fpath, root, ignore_patterns):
+        for fpath in file_list:
+            if not watched(fpath):
                 continue
             checked += 1
-            try:
-                src_mtime = fpath.stat().st_mtime
-            except OSError:
-                continue
-            ctx = _ctx_of(fpath)
-            if not ctx.exists():
-                drift.append((fpath, "no .ctx file"))
-            elif ctx.stat().st_mtime < src_mtime:
-                lag = src_mtime - ctx.stat().st_mtime
-                drift.append((fpath, f".ctx is {_fmt_elapsed(lag)} older than source"))
+            check(fpath, report_missing=True)
         summary_ok = f"No drift detected in {checked} changed file(s)."
+    elif history is not None:
+        # git: the state of the whole tree, no time window. A missing .ctx is not reported here:
+        # ContextDoc expects a .ctx only where it adds value (use --base or --changed-files for that).
+        for dirpath, dirnames, filenames in os.walk(root):
+            dirnames[:] = [d for d in dirnames if d not in skip_dirs]
+            for fname in filenames:
+                fpath = Path(dirpath) / fname
+                if fpath.suffix.lstrip(".") not in extensions or _is_ignored(fpath, root, ignore_patterns):
+                    continue
+                check(fpath, report_missing=False)
+        summary_ok = "No drift detected (git history)."
     else:
-        # mtime-based walk
+        # mtime-based walk, limited to files modified in the last --since seconds
         cutoff = time.time() - since
         for dirpath, dirnames, filenames in os.walk(root):
             dirnames[:] = [d for d in dirnames if d not in skip_dirs]
@@ -358,17 +470,11 @@ def status(
                 if _is_ignored(fpath, root, ignore_patterns):
                     continue
                 try:
-                    src_mtime = fpath.stat().st_mtime
+                    if fpath.stat().st_mtime < cutoff:
+                        continue
                 except OSError:
                     continue
-                if src_mtime < cutoff:
-                    continue
-                ctx = _ctx_of(fpath)
-                if not ctx.exists():
-                    drift.append((fpath, "no .ctx file"))
-                elif ctx.stat().st_mtime < src_mtime:
-                    lag = src_mtime - ctx.stat().st_mtime
-                    drift.append((fpath, f".ctx is {_fmt_elapsed(lag)} older than source"))
+                check(fpath, report_missing=True)
         summary_ok = f"No drift detected in the last {_fmt_elapsed(since)}."
 
     if not drift:

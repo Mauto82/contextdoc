@@ -6,7 +6,7 @@ import { runCtxTestsNative, planRun } from './ctxRunner';
 import { resolveProvider, getApiKey, listOllamaModels, isHeavyForThisMachine, estimatedRamBytes, loadedOllamaModels, formatGB, formatRam } from './llm';
 import { ResultCache } from './cache';
 import { TestResultsProvider } from './testResultsView';
-import { DriftEntry, driftOf, loadIgnorePatterns, scanDrift, sourceFor } from './watcher';
+import { DriftEntry, driftOf, gitToplevel, loadIgnorePatterns, scanDrift, sourceFor } from './watcher';
 import { updateDiagnostics } from './diagnostics';
 import { StatusBarManager, ModelStatusBar } from './statusBar';
 import { isConfigured, runSetupWizard } from './setupWizard';
@@ -27,11 +27,12 @@ export function activate(context: vscode.ExtensionContext): void {
     updateDiagnostics(diagnosticCollection, [...drift.values()], root);
     statusBar.setDriftCount(drift.size);
   };
-  const rescan = (root: string): DriftEntry[] => {
+  const rescan = async (root: string): Promise<DriftEntry[]> => {
+    const entries = await scanDrift(root);
     drift.clear();
-    for (const entry of scanDrift(root)) { drift.set(entry.filePath, entry); }
+    for (const entry of entries) { drift.set(entry.filePath, entry); }
     showDrift(root);
-    return [...drift.values()];
+    return entries;
   };
 
   vscode.window.registerTreeDataProvider('contextdoc.testResults', testResultsProvider);
@@ -115,7 +116,7 @@ export function activate(context: vscode.ExtensionContext): void {
       const root = getWorkspaceRoot();
       if (!root) return;
 
-      const entries = rescan(root);
+      const entries = await rescan(root);
       if (entries.length === 0) {
         vscode.window.showInformationMessage('ContextDoc: no drift detected.');
       } else {
@@ -148,8 +149,8 @@ export function activate(context: vscode.ExtensionContext): void {
 
       // saving a source or its .ctx: recompute the drift of that source only
       const source = sourceFor(doc.uri.fsPath);
-      debounceTimer = setTimeout(() => {
-        const entry = driftOf(source, root, loadIgnorePatterns(root));
+      debounceTimer = setTimeout(async () => {
+        const entry = await driftOf(source, root, loadIgnorePatterns(root), await gitToplevel(root));
         if (entry) { drift.set(source, entry); } else { drift.delete(source); }
         showDrift(root);
       }, 1000);

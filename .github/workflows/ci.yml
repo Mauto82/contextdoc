@@ -52,6 +52,8 @@ jobs:
       - run: npm ci
       - name: Type-check and compile
         run: npx tsc -p ./
+      - name: Unit tests
+        run: node --test test/unit/*.test.js
       - name: Package
         run: npx vsce package --out contextdoc.vsix
       - name: Cache VS Code download

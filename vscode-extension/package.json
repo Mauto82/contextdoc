@@ -106,7 +106,8 @@
     "compile": "tsc -p ./",
     "watch": "tsc -watch -p ./",
     "package": "vsce package",
-    "test:smoke": "node test/smoke/run.js"
+    "test:smoke": "node test/smoke/run.js",
+    "test:unit": "npm run compile && node --test test/unit/*.test.js"
   },
   "dependencies": {
     "yaml": "^2.4.0"

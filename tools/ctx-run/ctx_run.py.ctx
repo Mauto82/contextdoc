@@ -6,6 +6,7 @@ tensions:
   - "Missing source file is a warning, not a hard error — a .ctx may document a planned module or a deleted file; the LLM call still runs and marks steps as unverifiable"
   - "overall_passed is recomputed from steps, not trusted from LLM — guards against LLM inconsistency where overall=true but a step has passed=false"
   - "No Rich dependency — three color constants and ANSI codes are sufficient for pass/fail output; Rich adds ~2MB for marginal benefit in this context"
+  - "max_tokens is 4096, not lower — reasoning models count their thinking against the limit; at 1500 they often returned an empty answer that could not be parsed"
   - "LiteLLM as the only provider abstraction — do not add per-provider clients; the model string convention (ollama/x, gpt-x, claude-x) handles routing"
 
 workflows:

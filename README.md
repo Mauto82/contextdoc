@@ -166,14 +166,19 @@ pip install -r tools/ctx-watch/requirements.txt
 # Watch a directory (blocking, Ctrl+C to stop)
 python tools/ctx-watch/ctx_watch.py watch . --grace 300
 
-# One-shot scan of recently modified files without .ctx updates
-python tools/ctx-watch/ctx_watch.py status . --since 3600
+# One-shot scan: every source that drifted from its .ctx
+python tools/ctx-watch/ctx_watch.py status .
+
+# CI: only the files changed in this branch (a missing .ctx is reported too)
+python tools/ctx-watch/ctx_watch.py status . --base origin/main
 
 # Intent-first mode: find .ctx specs without a corresponding source file
 python tools/ctx-watch/ctx_watch.py status . --reverse
 ```
 
 Two distinct signals: `⚠` means drift — source changed, `.ctx` not updated. `→` means spec without implementation — the intent-first case.
+
+Inside a git repository, `status` measures drift from the **history**, so it gives the same answer locally, in CI and after a fresh clone: a source drifts when commits after the last commit that touched its `.ctx` changed it, or when it has uncommitted changes and its `.ctx` doesn't. Outside git (or with `--mtime`) it compares file modification times, limited to the last `--since` seconds. `watch` reports activity at save time and doesn't use git. The VS Code extension follows the same rules as `status`.
 
 To exclude files or paths from all ctx-watch checks, add a `.ctxignore` file at the project root. Patterns use `fnmatch` glob syntax — patterns without `/` match on filename only, patterns with `/` match on the relative path from root:
 
