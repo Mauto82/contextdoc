@@ -1,8 +1,10 @@
 /**
  * Setup wizard: where the model runs → which model → API key (cloud providers only) → test call.
- * The two defaults come first: gemma4:e2b locally (recommended: the lightest gemma4, ~4.6 GB,
- * no account) and gemma4 on Ollama's cloud (nothing to download, needs an Ollama account). Installed Ollama models are
- * listed with their size, and the ones too heavy for this machine's RAM are flagged.
+ * No model is set until the user picks one. Two suggestions come first, ordered by this machine's RAM:
+ * with at least 16 GB, gemma4:e2b locally (7.5 GB download, ~9 GB of RAM in use, free and private,
+ * a bit less accurate than large models); with less, gemma4 on Ollama's cloud (nothing to download,
+ * needs an Ollama account), with e2b flagged as too heavy. Installed Ollama models are listed with
+ * their size, and the ones too heavy for this machine's RAM are flagged.
  * The model goes in the settings, the API key in VS Code's SecretStorage.
  */
 
@@ -10,11 +12,16 @@ import * as vscode from 'vscode';
 import * as http from 'http';
 import * as os from 'os';
 import {
-  listOllamaModels, isHeavyForThisMachine, formatGB, resolveProvider, getApiKey, OLLAMA_URL,
+  listOllamaModels, isHeavyForThisMachine, estimatedRamBytes, formatGB, formatRam, resolveProvider, getApiKey, OLLAMA_URL,
 } from './llm';
 
-export const DEFAULT_CLOUD_MODEL = 'ollama/gemma4:cloud';
-export const DEFAULT_LOCAL_MODEL = 'ollama/gemma4:e2b';
+export const SUGGESTED_CLOUD_MODEL = 'ollama/gemma4:cloud';
+export const SUGGESTED_LOCAL_MODEL = 'ollama/gemma4:e2b';
+// measured on the repository's examples: 7.5 GB download, 8.7 GB of RAM once loaded
+const LOCAL_DOWNLOAD_BYTES = 7.5e9;
+const LOCAL_RAM_BYTES = 9e9;
+// e2b is suggested from 16 GB of RAM (a "16 GB" machine reports a bit more than 16e9 bytes, keep a margin)
+const LOCAL_MIN_RAM_BYTES = 15e9;
 
 interface CloudProvider {
   label: string;
@@ -58,21 +65,26 @@ export function isConfigured(): boolean {
 }
 
 export async function runSetupWizard(secrets: vscode.SecretStorage): Promise<boolean> {
-  // Step 1: where the model runs
+  // Step 1: where the model runs. The suggestion depends on this machine's RAM.
+  const ram = os.totalmem();
+  const localFits = ram >= LOCAL_MIN_RAM_BYTES;
+  const local: WhereItem = {
+    label: `${localFits ? '$(device-desktop)' : '$(warning)'} gemma4:e2b on this machine`,
+    description: localFits ? `suggested for this machine (${formatRam(ram)} RAM)` : `too heavy for this machine (${formatRam(ram)} RAM)`,
+    detail: `${SUGGESTED_LOCAL_MODEL} — ${formatGB(LOCAL_DOWNLOAD_BYTES)} download, about ${formatGB(LOCAL_RAM_BYTES)} of RAM while tests run. ` +
+      'Free, offline, private, no account. A bit less accurate than large models: it can miss subtle bugs.',
+    action: 'default-local',
+  };
+  const cloud: WhereItem = {
+    label: '$(cloud) gemma4 on Ollama cloud',
+    description: localFits ? 'nothing to download' : `suggested for this machine (${formatRam(ram)} RAM)`,
+    detail: `${SUGGESTED_CLOUD_MODEL} — runs on Ollama's servers, nothing heavy on this machine. ` +
+      'Free tier with usage limits; needs Ollama and an Ollama account (`ollama signin`).',
+    action: 'default-cloud',
+  };
   const where = await vscode.window.showQuickPick<WhereItem>(
     [
-      {
-        label: '$(device-desktop) gemma4:e2b on this machine',
-        description: 'recommended',
-        detail: `${DEFAULT_LOCAL_MODEL} — the lightest gemma4, downloaded once (~4.6 GB). Free, offline, private, no account needed.`,
-        action: 'default-local',
-      },
-      {
-        label: '$(cloud) gemma4 on Ollama cloud',
-        description: 'nothing to download',
-        detail: `${DEFAULT_CLOUD_MODEL} — runs on Ollama's servers, nothing heavy on this machine. Free tier with usage limits; needs an Ollama account (\`ollama signin\`).`,
-        action: 'default-cloud',
-      },
+      ...(localFits ? [local, cloud] : [cloud, local]),
       { label: '', kind: vscode.QuickPickItemKind.Separator, action: 'ollama' },
       {
         label: '$(server) Another Ollama model',
@@ -90,8 +102,16 @@ export async function runSetupWizard(secrets: vscode.SecretStorage): Promise<boo
   if (!where) { return false; }
 
   let model: string | undefined;
+  if (where.action === 'default-local' && !localFits) {
+    const go = await vscode.window.showWarningMessage(
+      `gemma4:e2b needs about ${formatGB(LOCAL_RAM_BYTES)} of RAM while tests run; this machine has ${formatRam(ram)}. It may slow everything down.`,
+      { modal: true },
+      'Use it anyway'
+    );
+    if (go !== 'Use it anyway') { return false; }
+  }
   if (where.action === 'default-cloud' || where.action === 'default-local') {
-    model = where.action === 'default-cloud' ? DEFAULT_CLOUD_MODEL : DEFAULT_LOCAL_MODEL;
+    model = where.action === 'default-cloud' ? SUGGESTED_CLOUD_MODEL : SUGGESTED_LOCAL_MODEL;
     if (!(await ensureOllamaModel(model.slice('ollama/'.length)))) { return false; }
   } else if (where.action === 'ollama') {
     model = await pickOllamaModel();
@@ -139,7 +159,7 @@ async function ensureOllamaModel(name: string): Promise<boolean> {
   const ok = await vscode.window.showInformationMessage(
     cloud
       ? `ContextDoc: ${name} isn't set up in Ollama yet. Add it now? It only registers the cloud model (no big download); you need to be signed in with \`ollama signin\`.`
-      : `ContextDoc: ${name} isn't installed. Download it now (~4.6 GB)?`,
+      : `ContextDoc: ${name} isn't installed. Download it now (${formatGB(LOCAL_DOWNLOAD_BYTES)})?`,
     { modal: true },
     'Download'
   );
@@ -206,7 +226,7 @@ async function pickOllamaModel(): Promise<string | undefined> {
     const ram = os.totalmem();
     const usable = models.filter((m) => !m.embedding);
     if (usable.length === 0) {
-      vscode.window.showWarningMessage('ContextDoc: no chat models installed in Ollama. Choose one of the gemma4 defaults to download it.');
+      vscode.window.showWarningMessage('ContextDoc: no chat models installed in Ollama. Choose one of the suggested gemma4 models to download it.');
       return undefined;
     }
     // light local models first, then cloud ones, heavy ones last
@@ -216,10 +236,11 @@ async function pickOllamaModel(): Promise<string | undefined> {
     const pick = await vscode.window.showQuickPick(
       usable.map((m) => ({
         label: (isHeavyForThisMachine(m, ram) ? '$(warning) ' : m.cloud ? '$(cloud) ' : '$(device-desktop) ') + m.name,
-        description: m.cloud ? 'Ollama cloud' : formatGB(m.sizeBytes),
+        description: m.cloud ? 'Ollama cloud' : `${formatGB(m.sizeBytes)}, ~${formatGB(estimatedRamBytes(m))} RAM`,
         detail: isHeavyForThisMachine(m, ram)
-          ? `Heavy for this machine: ${formatGB(m.sizeBytes)} with ${formatGB(ram)} of RAM. It may slow everything down.`
+          ? `Heavy for this machine: about ${formatGB(estimatedRamBytes(m))} of RAM in use, with ${formatRam(ram)} available. It may slow everything down.`
           : m.cloud ? 'Runs on Ollama\'s servers, with your account\'s usage limits.' : 'Runs on this machine.',
+        ramText: formatGB(estimatedRamBytes(m)),
         model: `ollama/${m.name}`,
         heavy: isHeavyForThisMachine(m, ram),
       })),
@@ -228,7 +249,7 @@ async function pickOllamaModel(): Promise<string | undefined> {
     if (!pick) { return undefined; }
     if (pick.heavy) {
       const go = await vscode.window.showWarningMessage(
-        `${pick.model} needs about ${pick.description} of memory on a machine with ${formatGB(ram)}. Tests may freeze your computer while they run.`,
+        `${pick.model} needs about ${pick.ramText} of RAM while tests run, on a machine with ${formatRam(ram)}. Tests may freeze your computer.`,
         { modal: true },
         'Use it anyway',
         'Choose another'

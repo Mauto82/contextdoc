@@ -23,6 +23,8 @@ export interface LlmProvider {
   call(messages: LlmMessage[], model: string, apiKey: string, timeout?: number, signal?: AbortSignal): Promise<LlmResponse>;
 }
 
+export const OLLAMA_URL = 'http://localhost:11434';
+
 export class CancelledError extends Error {
   constructor() {
     super('Cancelled');
@@ -141,6 +143,55 @@ export class OpenAIProvider implements LlmProvider {
 }
 
 // ---------------------------------------------------------------------------
+// Ollama provider: native /api/chat, so the context window can be sized to the prompt.
+// Through the OpenAI-compatible endpoint Ollama reserves the model's full context
+// (gemma4:12b took 16 GB of RAM instead of ~9), which is what froze machines.
+// ---------------------------------------------------------------------------
+
+/** Context window for a prompt: room for the prompt plus the answer, rounded up to a power of two. */
+export function contextFor(messages: LlmMessage[]): number {
+  const chars = messages.reduce((n, m) => n + m.content.length, 0);
+  const needed = Math.ceil(chars / 3) + 4096; // ~3 characters per token, plus the answer
+  let ctx = 8192;
+  while (ctx < needed && ctx < 131072) { ctx *= 2; }
+  return ctx;
+}
+
+export class OllamaProvider implements LlmProvider {
+  id = 'ollama';
+  name = 'Ollama';
+
+  async call(
+    messages: LlmMessage[],
+    model: string,
+    _apiKey: string,
+    timeout: number = 60000,
+    signal?: AbortSignal
+  ): Promise<LlmResponse> {
+    const body = JSON.stringify({
+      model,
+      messages,
+      stream: false,
+      options: { temperature: 0, num_ctx: contextFor(messages), num_predict: 4096 },
+    });
+    const raw = await httpRequest(`${OLLAMA_URL}/api/chat`, body, {}, timeout, signal);
+    const parsed = JSON.parse(raw);
+    return { content: parsed?.message?.content ?? '' };
+  }
+}
+
+/** Memory taken by the Ollama models loaded right now (from /api/ps), by name. */
+export async function loadedOllamaModels(): Promise<Map<string, number>> {
+  try {
+    const raw = await httpRequest(`${OLLAMA_URL}/api/ps`, null, {}, 3000);
+    const models = (JSON.parse(raw)?.models ?? []) as Array<{ name: string; size?: number }>;
+    return new Map(models.map((m) => [m.name, m.size ?? 0]));
+  } catch {
+    return new Map();
+  }
+}
+
+// ---------------------------------------------------------------------------
 // Anthropic provider
 // ---------------------------------------------------------------------------
 
@@ -188,7 +239,7 @@ export class AnthropicProvider implements LlmProvider {
 export const PROVIDERS: Record<string, LlmProvider> = {
   openai: new OpenAIProvider('https://api.openai.com/v1', 'openai', 'OpenAI'),
   anthropic: new AnthropicProvider(),
-  ollama: new OpenAIProvider('http://localhost:11434/v1', 'ollama', 'Ollama (local)'),
+  ollama: new OllamaProvider(),
   openrouter: new OpenAIProvider('https://openrouter.ai/api/v1', 'openrouter', 'OpenRouter'),
 };
 
@@ -255,8 +306,6 @@ export function getApiKey(providerId: string, secrets?: Record<string, string>):
 // Ollama: installed models and where they run
 // ---------------------------------------------------------------------------
 
-export const OLLAMA_URL = 'http://localhost:11434';
-
 export interface OllamaModel {
   name: string;
   sizeBytes: number;
@@ -280,11 +329,22 @@ export async function listOllamaModels(timeoutMs: number = 3000): Promise<Ollama
   }
 }
 
-/** "heavy" when a local model takes more than half of this machine's RAM. */
+/** RAM a local model takes once loaded with ContextDoc's context size: about its download size plus 20%
+ *  (measured: gemma4:e2b, 7.5 GB download, 8.7 GB loaded). */
+export function estimatedRamBytes(model: OllamaModel): number {
+  return model.cloud ? 0 : model.sizeBytes * 1.2;
+}
+
+/** "heavy" when a local model would take more than half of this machine's RAM. */
 export function isHeavyForThisMachine(model: OllamaModel, totalMemBytes: number): boolean {
-  return !model.cloud && model.sizeBytes > totalMemBytes * 0.5;
+  return estimatedRamBytes(model) > totalMemBytes * 0.5;
 }
 
 export function formatGB(bytes: number): string {
   return `${(bytes / 1e9).toFixed(1)} GB`;
+}
+
+/** A machine's RAM as it is sold: 8, 16, 18 GB (binary gigabytes, rounded). */
+export function formatRam(bytes: number): string {
+  return `${Math.round(bytes / 1024 ** 3)} GB`;
 }

@@ -13,16 +13,18 @@ Run conceptual tests and detect `.ctx` drift directly in VS Code — no Python i
 
 ### Setup Wizard
 
-On first launch, a guided setup asks **where the model should run**, with two defaults on top:
+On first launch, a guided setup asks **where the model should run**. No model is set until you pick one (drift detection works without a model). Two suggestions come first, ordered by your machine's RAM:
 
 | Choice | Model | Runs | Cost |
 |---|---|---|---|
-| **gemma4:e2b on this machine** (recommended) | `ollama/gemma4:e2b` | locally, downloaded once (~4.6 GB) | free, offline, private, no account |
-| **gemma4 on Ollama cloud** | `ollama/gemma4:cloud` | on Ollama's servers, nothing to download | free tier with usage limits; needs an Ollama account (`ollama signin`) |
-| Another Ollama model | any installed model | locally or on Ollama cloud | listed with its size; models bigger than half your RAM are flagged and need confirmation |
+| **gemma4:e2b on this machine** — suggested with 16 GB of RAM or more | `ollama/gemma4:e2b` | locally: 7.5 GB download, about 9 GB of RAM while tests run | free, offline, private, no account; a bit less accurate than large models |
+| **gemma4 on Ollama cloud** — suggested below 16 GB of RAM | `ollama/gemma4:cloud` | on Ollama's servers, nothing to download | free tier with usage limits; needs an Ollama account (`ollama signin`) |
+| Another Ollama model | any installed model | locally or on Ollama cloud | listed with its size and estimated RAM; models over half your RAM are flagged and need confirmation |
 | A paid API | Anthropic, OpenAI, OpenRouter | provider's servers | billed per call; cheapest models suggested first |
 
-If a default isn't installed in Ollama, the wizard offers to pull it (with progress, cancellable). API keys go to VS Code's SecretStorage, or are read from the environment. The wizard ends with a tiny test call, so a wrong key or model shows up immediately instead of at the first test.
+On the repository's examples (68 steps, 5 real bugs), gemma4:e2b got 65–66 steps right and caught 3–4 bugs, against 67 and 5 for large cloud models; a run took about 3 minutes.
+
+If a suggested model isn't installed in Ollama, the wizard offers to pull it (with progress, cancellable). API keys go to VS Code's SecretStorage, or are read from the environment. The wizard ends with a tiny test call, so a wrong key or model shows up immediately instead of at the first test.
 
 The model in use is always shown in the status bar: click it to change. Re-run anytime via `ContextDoc: Setup LLM Provider`.
 
@@ -31,6 +33,10 @@ The model in use is always shown in the status bar: click it to change. Re-run a
 - **Cache**: a scenario's result is reused while the scenario, the source file and the model are unchanged. Clear it with `ContextDoc: Clear Test Results Cache`.
 - **Confirmation**: before running the whole workspace (or with a model heavy for this machine) the extension shows how many LLM calls the run will make, how many results are cached, and where the model runs. Turn it off with `contextdoc.confirmRuns`.
 - **Cancel**: every run can be stopped from its notification; the request in flight is aborted too, so a local model stops working immediately.
+
+### Local models and RAM
+
+Ollama models are called through Ollama's native API with a context sized to the prompt (source file + scenario), not the model's maximum: gemma4:12b took 16 GB of RAM through the OpenAI-compatible endpoint and about 8 GB this way. After a run, if the loaded model still takes more than half of your RAM, the extension says so once and offers to change model.
 
 ### Run Conceptual Tests
 
@@ -62,7 +68,7 @@ If you already have `ctx-run` installed, the extension falls back to the CLI whe
 |----------|--------|---------|
 | **OpenAI** | gpt-4o-mini, gpt-4o, o3-mini, ... | `OPENAI_API_KEY` or setup wizard |
 | **Anthropic** | claude-haiku-5-5, claude-sonnet-5-5, claude-opus-5-5, ... | `ANTHROPIC_API_KEY` or setup wizard |
-| **Ollama** | gemma4:e2b, gemma4:cloud, any installed model | Not required |
+| **Ollama** | gemma4:e2b, gemma4:cloud, any installed model (native API, context sized to the prompt) | Not required |
 | **OpenRouter** | Any model via OpenRouter | `OPENROUTER_API_KEY` or setup wizard |
 
 ## Settings

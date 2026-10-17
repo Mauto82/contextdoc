@@ -3,7 +3,7 @@ import { runCtxTests, RunResult } from './runner';
 import * as path from 'path';
 import * as os from 'os';
 import { runCtxTestsNative, planRun } from './ctxRunner';
-import { resolveProvider, getApiKey, listOllamaModels, isHeavyForThisMachine, formatGB } from './llm';
+import { resolveProvider, getApiKey, listOllamaModels, isHeavyForThisMachine, estimatedRamBytes, loadedOllamaModels, formatGB, formatRam } from './llm';
 import { ResultCache } from './cache';
 import { TestResultsProvider } from './testResultsView';
 import { DriftEntry, driftOf, loadIgnorePatterns, scanDrift, sourceFor } from './watcher';
@@ -203,7 +203,7 @@ async function describeCost(model: string): Promise<{ text: string; warning: str
   if (m && isHeavyForThisMachine(m, os.totalmem())) {
     return {
       text: 'on this machine, free',
-      warning: `${modelName} is ${formatGB(m.sizeBytes)} on a machine with ${formatGB(os.totalmem())} of RAM: it may slow everything down.`,
+      warning: `${modelName} takes about ${formatGB(estimatedRamBytes(m))} of RAM on a machine with ${formatRam(os.totalmem())}: it may slow everything down.`,
     };
   }
   return { text: 'on this machine, free', warning: null };
@@ -285,11 +285,30 @@ async function runAndShow(
       }
     );
     showResult(result, provider);
+    if (llm.id === 'ollama') { await warnIfModelTooBig(model, context); }
   } catch (e: unknown) {
     const msg = e instanceof Error ? e.message : String(e);
     vscode.window.showErrorMessage(`ContextDoc: ${msg}`);
     outputChannel.appendLine(`Error: ${msg}`);
   }
+}
+
+/** After a run with a local model: what Ollama actually loaded, compared with this machine's RAM.
+ *  Warns once per model when it takes more than half of it. */
+async function warnIfModelTooBig(model: string, context: vscode.ExtensionContext): Promise<void> {
+  const name = resolveProvider(model).modelName;
+  const loaded = await loadedOllamaModels();
+  const bytes = loaded.get(name) ?? loaded.get(`${name}:latest`);
+  const ram = os.totalmem();
+  const key = `contextdoc.warnedHeavy.${name}`;
+  if (!bytes || bytes <= ram * 0.5 || context.globalState.get<boolean>(key)) { return; }
+  await context.globalState.update(key, true);
+  const choice = await vscode.window.showWarningMessage(
+    `ContextDoc: ${name} is using ${formatGB(bytes)} of this machine's ${formatRam(ram)} of RAM. ` +
+      'If your computer slows down, choose a lighter model or one on Ollama cloud.',
+    'Change Model'
+  );
+  if (choice === 'Change Model') { vscode.commands.executeCommand('contextdoc.setup'); }
 }
 
 function showResult(result: RunResult, provider: TestResultsProvider): void {
