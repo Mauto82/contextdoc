@@ -245,45 +245,47 @@ The **ContextDoc** extension brings conceptual tests and drift detection directl
 
 Install from the [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=Mauto.contextdoc) or search "ContextDoc" in the Extensions panel.
 
-**Features:**
-- **Run conceptual tests** with a single click (CodeLens on `conceptualTests:`)
-- **Setup wizard** — choose your LLM provider (OpenAI, Anthropic, Ollama, OpenRouter), model, and API key
-- **Drift detection**, built in — warns when source files change without `.ctx` updates, on save and when the workspace opens
-- **Native LLM runner** — no Python/CLI dependency, calls APIs directly
-- **Fallback to CLI** — if you have `ctx-run` installed, it can use that too
-- **Sidebar panel** with test results
-- **Status bar** drift counter
+**Features (0.2.0):**
+- **Run conceptual tests** with a single click (CodeLens on `conceptualTests:`), cancellable, with a cost confirmation before a whole-workspace run
+- **Setup wizard** — where the model runs (local gemma4:e2b from 16 GB of RAM, gemma4 on Ollama cloud below, any Ollama model with RAM warnings, or a paid API), ending with a test call
+- **Result cache shared with `ctx-run`** — unchanged scenario, source and model: no new call, from the CLI or the editor
+- **Drift detection**, built in, same rules as `ctx-watch status` (git history) — on save and when the workspace opens
+- **Lint** of `.ctx` files in the Problems panel, same rules as `ctx-lint`
+- **Native LLM runner** — no Python needed; Ollama through its native API with a context sized to the prompt
+- **Sidebar panel** with test results, **status bar** with the model and the drift count
 
 See [`vscode-extension/README.md`](./vscode-extension/README.md) for details.
 
 ## Current State
 
-The project is at **v0.3.0**.
+**ContextDoc 0.4** — `pipx install contextdoc` ([PyPI](https://pypi.org/project/contextdoc/)).
 
-- Schema: v0.3.0 — YAML, all sections optional, IDE autocomplete via JSON Schema; `project.ctx` convention for project-level context
-- Examples: four reference projects (`project-0` CLI, `project-1` FastAPI async, `project-2` TDD demo, `project-3` intent-first — spec before code), each with a `project.ctx`
-- Tools: `ctx-run` — LLM-powered conceptual test runner (Anthropic / OpenAI / Ollama); `ctx-watch` — real-time drift detector with intent-first support (`--reverse`); **VS Code extension** with native LLM runner
+- Schema: v0.3.0 — YAML, all sections optional, IDE autocomplete via JSON Schema; `project.ctx` for project-level context
+- Tools: `ctx-run` (LLM evaluation of `conceptualTests`, plus `generate` / `verify` for real pytest tests kept in sync), `ctx-watch` (drift from git history, intent-first `--reverse`), `ctx-lint`, `ctx-mcp`; the Claude Code hook; the VS Code extension 0.2.0
+- Shared specs: `spec/runner` and `spec/lint`, used by the Python tools and the extension and checked by parity tests
+- Examples: four reference projects (`project-0` CLI, `project-1` FastAPI async, `project-2` TDD demo with generated tests, `project-3` intent-first), each with a `project.ctx`
+- Benchmarks: [`bench/`](./bench/) — agents with and without `.ctx`, and models for `ctx-run`
 - Real-world: [notebook-lm-downloader](https://github.com/Mauto82/notebook-lm-downloader)
 
-Contributions welcome — especially: real-world examples, feedback on the schema, and tooling ideas (linters, IDE plugins, CI integrations).
-
-## License
-
-MIT
+Contributions welcome — especially real-world examples, feedback on the schema, and more benchmark runs (other models, other tasks).
 
 ## Development
 
 CI (`.github/workflows/ci.yml`) runs on every push and pull request:
 
-- the `pytest` suites of `tools/ctx-run` and `tools/ctx-watch` (Python 3.11 and 3.13)
-- the VS Code extension: type-check, packaging, and a smoke test of the **packaged** `.vsix` in a real VS Code (`vscode-extension/test/smoke`): activation, commands, drift detection on startup and on save, CodeLens
+- `pytest` for `tools/ctx-run`, `tools/ctx-watch`, `tools/ctx-mcp`, `tools/ctx-lint` and `integrations/claude-code` (Python 3.11 and 3.13), `ctx-lint --strict` on the repository's `.ctx` files, `ctx-run generate --check` on `examples/project-2`
+- the Python package: wheel built, installed in a clean venv, commands run outside the checkout
+- the VS Code extension: type-check, unit and parity tests, packaging, and a smoke test of the **packaged** `.vsix` in a real VS Code (`vscode-extension/test/smoke`)
 
 Run the same locally:
 
 ```bash
-cd tools/ctx-run && python -m pytest -q
-cd tools/ctx-watch && python -m pytest -q
-cd vscode-extension && npm ci && npm run test:smoke
+for d in tools/ctx-run tools/ctx-watch tools/ctx-mcp tools/ctx-lint integrations/claude-code; do (cd $d && python -m pytest -q); done
+cd vscode-extension && npm ci && npm run test:unit && npm run test:smoke
 ```
 
-`CONTEXTDOC_TEST_MODEL=ollama/gemma4:e2b npm run test:smoke` also runs the conceptual tests through the model (not done in CI, to keep it free and deterministic).
+`CONTEXTDOC_TEST_MODEL=ollama/gemma4:e2b npm run test:smoke` also runs the conceptual tests through the model (not done in CI, to keep it free and deterministic). Releases: `vX.Y.Z` tags publish the Python package to PyPI (`.github/workflows/release.yml`).
+
+## License
+
+MIT
